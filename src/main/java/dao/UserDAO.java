@@ -19,6 +19,7 @@ public class UserDAO {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
+            // TODO: The password should be hashed before storing
             stmt.setString(2, password);
             stmt.setString(3, gender.name());
             stmt.setInt(4, 300);
@@ -35,6 +36,25 @@ public class UserDAO {
     /* =========================
        LOGIN
        ========================= */
+    public User login(String username, String password) {
+        String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+        
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, username);
+            // TODO: The password should be hashed before setting
+            stmt.setString(2, password);
+
+            ResultSet userRS = stmt.executeQuery();
+            userRS.first();
+            User user = new User(userRS.getString("username"), UserGender.valueOf(userRS.getString("gender")));
+            return user;
+
+        } catch (SQLException e) {
+            return null;
+        }
+    }
    
 
     /* =========================
