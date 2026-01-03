@@ -65,7 +65,23 @@ public class UserDAO {
     /* =========================
        UPDATE SCORE
        ========================= */
+    public boolean updateUserScore(String username, int newScore) {
+        String sql = "UPDATE users SET score = ? WHERE username = ?";
 
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, newScore);
+            stmt.setString(2, username);
+
+            int rowsUpdated = stmt.executeUpdate();
+            return rowsUpdated > 0;
+
+        } catch (SQLException e) {
+
+            return false;
+        }
+    }
 
     /* =========================
        FIND USER (NO PASSWORD)
