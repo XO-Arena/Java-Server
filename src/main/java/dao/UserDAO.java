@@ -104,9 +104,34 @@ public class UserDAO {
             return false;
         }
     }
-    
     /* =========================
        FIND USER (NO PASSWORD)
        ========================= */
+    // this function return the user by the username
+    public User getUserByUsername(String username) {
+        String sql = "SELECT username, gender, score FROM users WHERE username = ?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            // as the pointer is aready null 
+            // to avoid the null pointer exeption
+            if (rs.next()) {
+            User user = new User(
+                    rs.getString("username"),
+                    UserGender.valueOf(rs.getString("gender"))
+            );
+            user.setScore(rs.getInt("score"));
+            return user;
+        }
+
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
 }
