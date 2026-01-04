@@ -5,6 +5,7 @@ import enums.UserGender;
 import models.User;
 
 import java.sql.*;
+import util.PasswordUtil;
 
 public class UserDAO {
 
@@ -17,8 +18,8 @@ public class UserDAO {
         try (Connection conn = DBUtil.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
-            // TODO: The password should be hashed before storing
-            stmt.setString(2, password);
+            String hashedPassword = PasswordUtil.hash(password);
+            stmt.setString(2, hashedPassword);
             stmt.setString(3, gender.name());
             stmt.setInt(4, 300);
 
@@ -39,7 +40,8 @@ public class UserDAO {
         try (Connection conn = DBUtil.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
-            stmt.setString(2, password);
+            String hashedPassword = PasswordUtil.hash(password);
+            stmt.setString(2, hashedPassword);
 
             ResultSet rs = stmt.executeQuery();
 
