@@ -39,15 +39,23 @@ public class UserDAO {
         try (Connection conn = DBUtil.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
-            // TODO: The password should be hashed before setting
             stmt.setString(2, password);
 
-            ResultSet userRS = stmt.executeQuery();
-            userRS.first();
-            User user = new User(userRS.getString("username"), UserGender.valueOf(userRS.getString("gender")));
-            return user;
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                User user = new User(
+                        rs.getString("username"),
+                        UserGender.valueOf(rs.getString("gender"))
+                );
+                user.setScore(rs.getInt("score"));
+                return user;
+            }
+
+            return null;
 
         } catch (SQLException e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -104,6 +112,7 @@ public class UserDAO {
             return false;
         }
     }
+
     /* =========================
        FIND USER (NO PASSWORD)
        ========================= */
@@ -111,22 +120,20 @@ public class UserDAO {
     public User getUserByUsername(String username) {
         String sql = "SELECT username, gender, score FROM users WHERE username = ?";
 
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBUtil.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
             // as the pointer is aready null 
             // to avoid the null pointer exeption
             if (rs.next()) {
-            User user = new User(
-                    rs.getString("username"),
-                    UserGender.valueOf(rs.getString("gender"))
-            );
-            user.setScore(rs.getInt("score"));
-            return user;
-        }
-
+                User user = new User(
+                        rs.getString("username"),
+                        UserGender.valueOf(rs.getString("gender"))
+                );
+                user.setScore(rs.getInt("score"));
+                return user;
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
