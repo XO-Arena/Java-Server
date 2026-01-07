@@ -74,13 +74,13 @@ class UserDAOTest {
         assertFalse(updated, "Score update for non-existing user should fail");
     }
 
-//    @AfterAll
-//    static void cleanup() {
-//        boolean cleaned = userDAO.cleanAllUsers();
-//        if (cleaned) {
-//            System.out.println("[Test] All test users deleted successfully.");
-//        } else {
-//            System.out.println("[Test] No users were deleted or error occurred.");
-//        }
-//    }
+    @AfterAll
+    static void cleanup() {
+        boolean cleaned = userDAO.cleanAllUsers();
+        if (cleaned) {
+            System.out.println("[Test] All test users deleted successfully.");
+        } else {
+            System.out.println("[Test] No users were deleted or error occurred.");
+        }
+    }
 }

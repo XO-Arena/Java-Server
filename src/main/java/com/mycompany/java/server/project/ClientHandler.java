@@ -1,5 +1,6 @@
 package com.mycompany.java.server.project;
 
+import dao.UserDAO;
 import enums.RequestType;
 import models.User;
 
@@ -32,28 +33,19 @@ public class ClientHandler implements Runnable {
     }
 
     private void listen() {
-        while (running) {
-            try {
-                Object obj = in.readObject();
-
-                if (!(obj instanceof RequestType)) {
-                    System.out.println("Unknown request type from client: " + socket.getRemoteSocketAddress());
-                    continue;
-                }
-
-                RequestType request = (RequestType) obj;
-                handleRequest(request);
-
-            } catch (EOFException e) {
-                // client closed connection gracefully
-                System.out.println("Client disconnected: " + socket.getRemoteSocketAddress());
-                running = false;
-            } catch (Exception e) {
-                System.out.println("Error handling client request: " + e.getMessage());
-                running = false;
+    while (running) {
+        try {
+            // السيرفر هنا ينتظر فقط "نوع الطلب" (مثل LOGIN أو REGISTER)
+            Object obj = in.readObject();
+            if (obj instanceof String command) {
+                handleRequest(command); 
             }
+        } catch (Exception e) {
+            running = false;
+            cleanup();
         }
     }
+}
 
     private void handleRequest(RequestType request) {
         switch (request) {
@@ -93,12 +85,68 @@ public class ClientHandler implements Runnable {
     // ==============================
     // Request Handlers 
     // ==============================
-    private void handleLogin() {
-        // TODO: implement login
-    }
+    // Inside ClientHandler.java
+    private UserDAO userDAO = new UserDAO(); // Initialize DAO
 
     private void handleRegister() {
-        // TODO: implement register
+        try {
+            String username = (String) in.readObject();
+            String password = (String) in.readObject();
+            String genderStr = (String) in.readObject();
+
+            if (username.isBlank() || password.isBlank() || genderStr == null) {
+                send("INVALID_DATA");
+                return;
+            }
+
+            UserDAO dao = new UserDAO();
+            enums.UserGender gender
+                    = enums.UserGender.valueOf(genderStr.toUpperCase());
+
+            boolean success = dao.register(username, password, gender);
+
+            if (success) {
+                send("REGISTER_SUCCESS");
+            } else {
+                send("USER_EXISTS");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            send("SERVER_ERROR");
+        }
+    }
+
+    private void handleLogin() {
+        try {
+            String username = (String) in.readObject();
+            String password = (String) in.readObject();
+
+            if (username.isBlank() || password.isBlank()) {
+                send("INVALID_DATA");
+                return;
+            }
+
+            UserDAO dao = new UserDAO();
+            User user = dao.login(username, password);
+
+            if (user == null) {
+                send("LOGIN_FAILED");
+                return;
+            }
+
+            if (!ServerContext.addClient(username, this)) {
+                send("ALREADY_LOGGED_IN");
+                return;
+            }
+
+            loggedInUser = user;
+            send("LOGIN_SUCCESS");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            send("SERVER_ERROR");
+        }
     }
 
     private void handleInvite() {
