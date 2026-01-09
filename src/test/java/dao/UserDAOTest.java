@@ -24,7 +24,7 @@ class UserDAOTest {
     @Order(1)
     @DisplayName("Register new user successfully")
     void testRegisterNewUser() {
-        boolean registered = userDAO.register(TEST_USERNAME, TEST_PASSWORD, TEST_GENDER);
+        boolean registered = userDAO.register("esraa50", "123456", UserGender.FEMALE);
         assertTrue(registered, "New user should be registered successfully");
     }
 
@@ -74,13 +74,13 @@ class UserDAOTest {
         assertFalse(updated, "Score update for non-existing user should fail");
     }
 
-    @AfterAll
-    static void cleanup() {
-        boolean cleaned = userDAO.cleanAllUsers();
-        if (cleaned) {
-            System.out.println("[Test] All test users deleted successfully.");
-        } else {
-            System.out.println("[Test] No users were deleted or error occurred.");
-        }
-    }
+//    @AfterAll
+//    static void cleanup() {
+//        boolean cleaned = userDAO.cleanAllUsers();
+//        if (cleaned) {
+//            System.out.println("[Test] All test users deleted successfully.");
+//        } else {
+//            System.out.println("[Test] No users were deleted or error occurred.");
+//        }
+//    }
 }

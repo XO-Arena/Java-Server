@@ -105,49 +105,45 @@ public class ClientHandler implements Runnable {
         }
     }
 
-   private void handleRegister(JsonElement payload) {
-    try {
-        RegisterDTO dto = gson.fromJson(payload, RegisterDTO.class);
+    private void handleRegister(JsonElement payload) {
+        try {
+            RegisterDTO dto = gson.fromJson(payload, RegisterDTO.class);
 
-        String username = dto.getUsername();
-        String password = dto.getPassword();
-        UserGender gender = dto.getGender();
+            String username = dto.getUsername();
+            String password = dto.getPassword();
+            UserGender gender = dto.getGender();
 
-        if (username.isBlank() || password.isBlank() || gender == null) {
-            send(new Response(ResponseType.INVALID_DATA));
-            return;
+            if (username.isBlank() || password.isBlank() || gender == null) {
+                send(new Response(ResponseType.INVALID_DATA));
+                return;
+            }
+
+            boolean success = dao.register(username, password, gender);
+
+            if (success) {
+                send(new Response(ResponseType.REGISTER_SUCCESS));
+            } else {
+                send(new Response(ResponseType.USER_EXISTS));
+            }
+
+        } catch (JsonSyntaxException e) {
+            send(new Response(ResponseType.ERROR));
+        } catch (Exception e) {
+            send(new Response(ResponseType.ERROR));
         }
-
-        boolean success = dao.register(username, password, gender);
-
-        if (success) {
-            send(new Response(ResponseType.REGISTER_SUCCESS));
-        } else {
-            send(new Response(ResponseType.USER_EXISTS));
-        }
-
-    } catch (JsonSyntaxException e) {
-        send(new Response(ResponseType.ERROR));
-    } catch (Exception e) {
-        send(new Response(ResponseType.ERROR));
     }
-}
-
 
     private void handleLogin(JsonElement payload) {
         try {
             LoginDTO dto = gson.fromJson(payload, LoginDTO.class);
-
             String username = dto.getUsername();
             String password = dto.getPassword();
-
             if (username.isBlank() || password.isBlank()) {
                 send(new Response(ResponseType.INVALID_DATA));
                 return;
             }
 
             User user = dao.login(username, password);
-
             if (user == null) {
                 send(new Response(ResponseType.LOGIN_FAILED));
                 return;
@@ -160,7 +156,6 @@ public class ClientHandler implements Runnable {
 
             loggedInUser = user;
             send(new Response(ResponseType.LOGIN_SUCCESS));
-
         } catch (JsonSyntaxException e) {
             send(new Response(ResponseType.ERROR));
         }
