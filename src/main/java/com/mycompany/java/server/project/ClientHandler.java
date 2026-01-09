@@ -1,7 +1,16 @@
 package com.mycompany.java.server.project;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonSyntaxException;
 import dao.UserDAO;
+import data.Request;
+import data.Response;
+import dto.LoginDTO;
+import dto.RegisterDTO;
 import enums.RequestType;
+import enums.ResponseType;
+import enums.UserGender;
 import models.User;
 
 import java.io.*;
@@ -10,50 +19,64 @@ import java.net.Socket;
 public class ClientHandler implements Runnable {
 
     private final Socket socket;
-    private ObjectInputStream in;
-    private ObjectOutputStream out;
-
+    private BufferedReader in;
+    private PrintWriter out;
+    private Gson gson;
+    private UserDAO dao;
     private User loggedInUser;
-    private volatile boolean running = true; // volatile for thread visibility
+    private volatile boolean running = true;
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
+        this.dao = new UserDAO();
+        this.gson = new Gson();
+
+        try {
+            in = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream())
+            );
+            out = new PrintWriter(
+                    socket.getOutputStream(), true
+            );
+        } catch (IOException e) {
+            running = false;
+        }
     }
 
     @Override
     public void run() {
         try {
-            setupStreams();
             listen();
-        } catch (IOException e) {
-            System.out.println("Error initializing streams for client: " + socket.getRemoteSocketAddress());
         } finally {
             cleanup();
         }
     }
 
     private void listen() {
-    while (running) {
-        try {
-            // السيرفر هنا ينتظر فقط "نوع الطلب" (مثل LOGIN أو REGISTER)
-            Object obj = in.readObject();
-            if (obj instanceof String command) {
-                handleRequest(command); 
+        while (running) {
+            try {
+                String line = in.readLine();
+                if (line == null) {
+                    break;
+                }
+
+                Request request = gson.fromJson(line, Request.class);
+                handleRequest(request);
+
+            } catch (JsonSyntaxException | IOException e) {
+                running = false;
+                break;
             }
-        } catch (Exception e) {
-            running = false;
-            cleanup();
         }
     }
-}
 
-    private void handleRequest(RequestType request) {
-        switch (request) {
+    private void handleRequest(Request request) {
+        switch (request.getType()) {
             case LOGIN:
-                handleLogin();
+                handleLogin(request.getPayload());
                 break;
             case REGISTER:
-                handleRegister();
+                handleRegister(request.getPayload());
                 break;
             case INVITE:
                 handleInvite();
@@ -77,75 +100,69 @@ public class ClientHandler implements Runnable {
                 handleLogout();
                 break;
             default:
-                handleUnknownRequest(request);
+                handleUnknownRequest(request.getType());
                 break;
         }
     }
 
-    // ==============================
-    // Request Handlers 
-    // ==============================
-    // Inside ClientHandler.java
-    private UserDAO userDAO = new UserDAO(); // Initialize DAO
+   private void handleRegister(JsonElement payload) {
+    try {
+        RegisterDTO dto = gson.fromJson(payload, RegisterDTO.class);
 
-    private void handleRegister() {
-        try {
-            String username = (String) in.readObject();
-            String password = (String) in.readObject();
-            String genderStr = (String) in.readObject();
+        String username = dto.getUsername();
+        String password = dto.getPassword();
+        UserGender gender = dto.getGender();
 
-            if (username.isBlank() || password.isBlank() || genderStr == null) {
-                send("INVALID_DATA");
-                return;
-            }
-
-            UserDAO dao = new UserDAO();
-            enums.UserGender gender
-                    = enums.UserGender.valueOf(genderStr.toUpperCase());
-
-            boolean success = dao.register(username, password, gender);
-
-            if (success) {
-                send("REGISTER_SUCCESS");
-            } else {
-                send("USER_EXISTS");
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            send("SERVER_ERROR");
+        if (username.isBlank() || password.isBlank() || gender == null) {
+            send(new Response(ResponseType.INVALID_DATA));
+            return;
         }
-    }
 
-    private void handleLogin() {
+        boolean success = dao.register(username, password, gender);
+
+        if (success) {
+            send(new Response(ResponseType.REGISTER_SUCCESS));
+        } else {
+            send(new Response(ResponseType.USER_EXISTS));
+        }
+
+    } catch (JsonSyntaxException e) {
+        send(new Response(ResponseType.ERROR));
+    } catch (Exception e) {
+        send(new Response(ResponseType.ERROR));
+    }
+}
+
+
+    private void handleLogin(JsonElement payload) {
         try {
-            String username = (String) in.readObject();
-            String password = (String) in.readObject();
+            LoginDTO dto = gson.fromJson(payload, LoginDTO.class);
+
+            String username = dto.getUsername();
+            String password = dto.getPassword();
 
             if (username.isBlank() || password.isBlank()) {
-                send("INVALID_DATA");
+                send(new Response(ResponseType.INVALID_DATA));
                 return;
             }
 
-            UserDAO dao = new UserDAO();
             User user = dao.login(username, password);
 
             if (user == null) {
-                send("LOGIN_FAILED");
+                send(new Response(ResponseType.LOGIN_FAILED));
                 return;
             }
 
             if (!ServerContext.addClient(username, this)) {
-                send("ALREADY_LOGGED_IN");
+                send(new Response(ResponseType.ALREADY_LOGGED_IN));
                 return;
             }
 
             loggedInUser = user;
-            send("LOGIN_SUCCESS");
+            send(new Response(ResponseType.LOGIN_SUCCESS));
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            send("SERVER_ERROR");
+        } catch (JsonSyntaxException e) {
+            send(new Response(ResponseType.ERROR));
         }
     }
 
@@ -182,27 +199,11 @@ public class ClientHandler implements Runnable {
         System.out.println("Received unknown request: " + request);
     }
 
-    // ==============================
-    // Streams
-    // ==============================
-    private void setupStreams() throws IOException {
-        out = new ObjectOutputStream(socket.getOutputStream());
-        out.flush();
-        in = new ObjectInputStream(socket.getInputStream());
+    public synchronized void send(Response response) {
+        String json = gson.toJson(response);
+        out.println(json);
     }
 
-    public synchronized void send(Object response) {
-        try {
-            out.writeObject(response);
-            out.flush();
-        } catch (IOException e) {
-            System.out.println("Failed to send response to client: " + e.getMessage());
-        }
-    }
-
-    // ==============================
-    // Cleanup
-    // ==============================
     private void cleanup() {
         running = false;
         try {
@@ -217,9 +218,6 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    // ==============================
-    // Getters / Setters
-    // ==============================
     public User getLoggedInUser() {
         return loggedInUser;
     }
