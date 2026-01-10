@@ -4,14 +4,43 @@ import com.google.gson.Gson;
 import data.Response;
 import dto.PlayerDTO;
 import enums.ResponseType;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Collectors;
+import models.MatchEntry;
 
 public class ServerContext {
 
     private static final ConcurrentHashMap<String, ClientHandler> onlineClients = new ConcurrentHashMap<>();
+    private static final PriorityBlockingQueue<MatchEntry> matchmakingQueue = new PriorityBlockingQueue<>(10, Comparator.comparingInt(MatchEntry::getScore));
+
+    static {
+        Gson gson = new Gson();
+        new Thread(() -> {
+            while (true) {
+                try {
+                    if (matchmakingQueue.size() >= 2) {
+                        ClientHandler client1 = matchmakingQueue.take().getClient();
+                        ClientHandler client2 = matchmakingQueue.take().getClient();
+
+                        PlayerDTO[] players = {PlayerDTO.fromUser(client1.getLoggedInUser()), PlayerDTO.fromUser(client2.getLoggedInUser())};
+                        Response response = new Response(ResponseType.JOIN_GAME, gson.toJsonTree(players));
+                        client1.send(response);
+                        client2.send(response);
+                        leaveMatchmaking(client1);
+                        leaveMatchmaking(client2);
+                    }
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    System.getLogger(ClientHandler.class.getName()).log(System.Logger.Level.ERROR, "", ex);
+                }
+            }
+        }).start();
+
+    }
 
     public static boolean addClient(String username, ClientHandler handler) {
         return onlineClients.putIfAbsent(username, handler) == null;
@@ -44,6 +73,19 @@ public class ServerContext {
         ))
                 .collect(Collectors.toList());
     }
+    
+    public static List<PlayerDTO> getOnlineUsers() {
+        return onlineClients.values().stream()
+                .map(ClientHandler::getLoggedInUser)
+                .filter(Objects::nonNull)
+                .map(user -> new PlayerDTO(
+                user.getUsername(),
+                user.getGender(),
+                user.getScore(),
+                user.getState()
+        ))
+                .collect(Collectors.toList());
+    }
 
     public static int getTotalRegisteredUsers() {
         UserDAO userDAO = new UserDAO();
@@ -67,4 +109,32 @@ public class ServerContext {
                 client.send(response);
             }
         });
+    }
+    public static void broadcastOnlinePlayers() {
+        onlineClients.forEach((username, client) -> {
+
+            List<PlayerDTO> listForClient
+                    = getOnlineUsers(username);
+
+            Response response = new Response(
+                    ResponseType.ONLINE_PLAYERS,
+                    new Gson().toJsonTree(listForClient)
+            );
+
+            client.send(response);
+        });
+    }
+
+    public static boolean joinMatchmakingQueue(ClientHandler client) {
+        return matchmakingQueue.add(new MatchEntry(client));
+    }
+
+    public static void leaveMatchmaking(ClientHandler client) {
+        matchmakingQueue.removeIf((match) -> match.getClient().equals(client));
+        System.out.println(matchmakingQueue);
+    }
+
+    public static PriorityBlockingQueue<MatchEntry> getMatchmakingQueue() {
+        return matchmakingQueue;
+    }
 }

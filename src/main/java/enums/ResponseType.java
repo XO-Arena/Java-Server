@@ -16,5 +16,6 @@ public enum ResponseType {
     INVITE_ACCEPTED,
     INVITE_REJECTED,
     MOVE_MADE,
+    JOIN_GAME,
     GAME_OVER
 }

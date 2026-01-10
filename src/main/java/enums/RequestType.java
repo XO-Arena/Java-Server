@@ -11,6 +11,7 @@ public enum RequestType {
     MAKE_MOVE,
     WATCH,
     QUICK_GAME,
+    LEAVE_QUEUE,
     LEAVE_GAME,
     LOGOUT
 }

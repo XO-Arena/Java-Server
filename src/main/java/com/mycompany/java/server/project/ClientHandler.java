@@ -21,6 +21,9 @@ import java.io.*;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.PriorityBlockingQueue;
+import models.MatchEntry;
 
 public class ClientHandler implements Runnable {
 
@@ -118,10 +121,17 @@ public class ClientHandler implements Runnable {
             case LOGOUT:
                 handleLogout();
                 break;
+            case LEAVE_QUEUE:
+                handleLeaveQueue();
+                break;
             default:
                 handleUnknownRequest(request.getType());
                 break;
         }
+    }
+
+    private void handleLeaveQueue() {
+        ServerContext.leaveMatchmaking(this);
     }
 
     private void handleRegister(JsonElement payload) {
@@ -254,7 +264,7 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleQuickGame() {
-        // TODO: implement quick game
+        ServerContext.joinMatchmakingQueue(this);
     }
 
     private void handleLeaveGame() {
@@ -332,4 +342,25 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 41 * hash + Objects.hashCode(this.loggedInUser);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ClientHandler other = (ClientHandler) obj;
+        return Objects.equals(this.loggedInUser, other.loggedInUser);
+    }
 }

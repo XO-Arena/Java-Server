@@ -2,6 +2,7 @@ package models;
 
 import enums.UserGender;
 import enums.UserState;
+import java.util.Objects;
 
 public class User {
 
@@ -58,4 +59,28 @@ public class User {
     public void updateScore(int points) {
         score = (score + points < 0) ? 0 : (score + points);
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 37 * hash + Objects.hashCode(this.username);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final User other = (User) obj;
+        return Objects.equals(this.username, other.username);
+    }
+    
+    
 }
