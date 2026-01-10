@@ -1,17 +1,18 @@
 package dao;
 
 import dbutil.DBUtil;
+import dto.PlayerDTO;
 import enums.UserGender;
+import enums.UserState;
 import models.User;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import util.PasswordUtil;
 
 public class UserDAO {
 
-    /* =========================
-       REGISTER
-       ========================= */
     public boolean register(String username, String password, UserGender gender) {
         String sql = "INSERT INTO users (username, password, gender, score) VALUES (?, ?, ?, ?)";
 
@@ -31,9 +32,6 @@ public class UserDAO {
         }
     }
 
-    /* =========================
-       LOGIN
-       ========================= */
     public User login(String username, String password) {
         String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
 
@@ -57,14 +55,10 @@ public class UserDAO {
             return null;
 
         } catch (SQLException e) {
-            e.printStackTrace();
             return null;
         }
     }
 
-    /* =========================
-       UPDATE SCORE
-       ========================= */
     public boolean updateUserScore(String username, int newScore) {
         String sql = "UPDATE users SET score = ? WHERE username = ?";
 
@@ -82,9 +76,6 @@ public class UserDAO {
         }
     }
 
-    /* =========================
-       DELETE USER
-       ========================= */
     public boolean deleteUser(String username) {
         String sql = "DELETE FROM users WHERE username = ?";
 
@@ -99,9 +90,6 @@ public class UserDAO {
         }
     }
 
-    /* =========================
-       CLEAN ALL USERS
-       ========================= */
     public boolean cleanAllUsers() {
         String sql = "DELETE FROM users";
 
@@ -115,10 +103,6 @@ public class UserDAO {
         }
     }
 
-    /* =========================
-       FIND USER (NO PASSWORD)
-       ========================= */
-    // this function return the user by the username
     public User getUserByUsername(String username) {
         String sql = "SELECT username, gender, score FROM users WHERE username = ?";
 
@@ -138,9 +122,28 @@ public class UserDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            return null;
         }
         return null;
     }
+     public List<PlayerDTO> getLeaderboard() throws SQLException {
+        List<PlayerDTO> leaderboard = new ArrayList<>();
 
+        String sql = "SELECT username, score, gender FROM users ORDER BY score DESC"; 
+        try (Connection conn = DBUtil.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                PlayerDTO player = new PlayerDTO(
+                        rs.getString("username"),
+                        rs.getString("gender") != null ? enums.UserGender.valueOf(rs.getString("gender").toUpperCase()) : null,
+                        rs.getInt("score"),
+                        UserState.OFFLINE
+                );
+                leaderboard.add(player);
+            }
+        }
+
+        return leaderboard;
+    }
 }
