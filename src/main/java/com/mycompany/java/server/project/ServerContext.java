@@ -3,6 +3,8 @@ import dao.UserDAO;
 import com.google.gson.Gson;
 import data.Response;
 import dto.PlayerDTO;
+import dto.UserDTO;
+import enums.PlayerSymbol;
 import enums.ResponseType;
 import java.util.Comparator;
 import java.util.List;
@@ -16,31 +18,6 @@ public class ServerContext {
 
     private static final ConcurrentHashMap<String, ClientHandler> onlineClients = new ConcurrentHashMap<>();
     private static final PriorityBlockingQueue<MatchEntry> matchmakingQueue = new PriorityBlockingQueue<>(10, Comparator.comparingInt(MatchEntry::getScore));
-
-    static {
-        Gson gson = new Gson();
-        new Thread(() -> {
-            while (true) {
-                try {
-                    if (matchmakingQueue.size() >= 2) {
-                        ClientHandler client1 = matchmakingQueue.take().getClient();
-                        ClientHandler client2 = matchmakingQueue.take().getClient();
-
-                        PlayerDTO[] players = {PlayerDTO.fromUser(client1.getLoggedInUser()), PlayerDTO.fromUser(client2.getLoggedInUser())};
-                        Response response = new Response(ResponseType.JOIN_GAME, gson.toJsonTree(players));
-                        client1.send(response);
-                        client2.send(response);
-                        leaveMatchmaking(client1);
-                        leaveMatchmaking(client2);
-                    }
-                    Thread.sleep(1000);
-                } catch (InterruptedException ex) {
-                    System.getLogger(ClientHandler.class.getName()).log(System.Logger.Level.ERROR, "", ex);
-                }
-            }
-        }).start();
-
-    }
 
     public static boolean addClient(String username, ClientHandler handler) {
         return onlineClients.putIfAbsent(username, handler) == null;
@@ -60,12 +37,12 @@ public class ServerContext {
         return onlineClients.containsKey(username);
     }
 
-    public static List<PlayerDTO> getOnlineUsers(String username) {
+    public static List<UserDTO> getOnlineUsers(String username) {
         return onlineClients.values().stream()
                 .map(ClientHandler::getLoggedInUser)
                 .filter(Objects::nonNull)
                 .filter(user -> !user.getUsername().equals(username))
-                .map(user -> new PlayerDTO(
+                .map(user -> new UserDTO(
                 user.getUsername(),
                 user.getGender(),
                 user.getScore(),
@@ -74,11 +51,11 @@ public class ServerContext {
                 .collect(Collectors.toList());
     }
     
-    public static List<PlayerDTO> getOnlineUsers() {
+    public static List<UserDTO> getOnlineUsers() {
         return onlineClients.values().stream()
                 .map(ClientHandler::getLoggedInUser)
                 .filter(Objects::nonNull)
-                .map(user -> new PlayerDTO(
+                .map(user -> new UserDTO(
                 user.getUsername(),
                 user.getGender(),
                 user.getScore(),
@@ -99,7 +76,7 @@ public class ServerContext {
    public static void broadcastOnlinePlayers(String loggedoutUsername) {
         onlineClients.forEach((username, client) -> {
             if (!username.equals(loggedoutUsername)) {
-                List<PlayerDTO> listForClient
+                List<UserDTO> listForClient
                         = getOnlineUsers(username);
                 Response response = new Response(
                         ResponseType.ONLINE_PLAYERS,
@@ -113,7 +90,7 @@ public class ServerContext {
     public static void broadcastOnlinePlayers() {
         onlineClients.forEach((username, client) -> {
 
-            List<PlayerDTO> listForClient
+            List<UserDTO> listForClient
                     = getOnlineUsers(username);
 
             Response response = new Response(
@@ -126,7 +103,27 @@ public class ServerContext {
     }
 
     public static boolean joinMatchmakingQueue(ClientHandler client) {
-        return matchmakingQueue.add(new MatchEntry(client));
+        Gson gson = new Gson();
+        if (matchmakingQueue.add(new MatchEntry(client))) {
+            try {
+                if (matchmakingQueue.size() >= 2) {
+                    ClientHandler client1 = matchmakingQueue.take().getClient();
+                    ClientHandler client2 = matchmakingQueue.take().getClient();
+
+                    PlayerDTO[] players = {PlayerDTO.fromUser(client1.getLoggedInUser(), PlayerSymbol.X), PlayerDTO.fromUser(client2.getLoggedInUser(), PlayerSymbol.O)};
+                    Response response = new Response(ResponseType.JOIN_GAME, gson.toJsonTree(players));
+                    client1.send(response);
+                    client2.send(response);
+                    leaveMatchmaking(client1);
+                    leaveMatchmaking(client2);
+                }
+                return true;
+            } catch (InterruptedException ex) {
+                System.getLogger(ClientHandler.class.getName()).log(System.Logger.Level.ERROR, "", ex);
+            }
+        }
+
+        return false;
     }
 
     public static void leaveMatchmaking(ClientHandler client) {

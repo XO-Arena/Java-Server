@@ -1,7 +1,7 @@
 package dao;
 
 import dbutil.DBUtil;
-import dto.PlayerDTO;
+import dto.UserDTO;
 import enums.UserGender;
 import enums.UserState;
 import models.User;
@@ -126,15 +126,14 @@ public class UserDAO {
         }
         return null;
     }
-
-    public List<PlayerDTO> getLeaderboard() throws SQLException {
-        List<PlayerDTO> leaderboard = new ArrayList<>();
+     public List<UserDTO> getLeaderboard() throws SQLException {
+        List<UserDTO> leaderboard = new ArrayList<>();
 
         String sql = "SELECT username, score, gender FROM users ORDER BY score DESC";
         try (Connection conn = DBUtil.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                PlayerDTO player = new PlayerDTO(
+                UserDTO player = new UserDTO(
                         rs.getString("username"),
                         rs.getString("gender") != null ? enums.UserGender.valueOf(rs.getString("gender").toUpperCase()) : null,
                         rs.getInt("score"),

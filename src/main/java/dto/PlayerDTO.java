@@ -1,48 +1,42 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package dto;
 
 import enums.UserGender;
 import enums.UserState;
+import enums.PlayerSymbol;
 import models.User;
 
-public class PlayerDTO {
+/**
+ *
+ * @author mohannad
+ */
+public class PlayerDTO extends UserDTO {
+    private PlayerSymbol symbol;
 
-    private String username;
-    private UserGender gender;
-    private int score;
-    private UserState state;
-
-    public PlayerDTO() {
+    public PlayerDTO(String username, UserGender gender, int score, UserState state, PlayerSymbol symbol) {
+        super(username, gender, score, state);
+        this.symbol = symbol;
     }
-
-    public PlayerDTO(String username, UserGender gender, int score, UserState state) {
-        this.username = username;
-        this.gender = gender;
-        this.score = score;
-        this.state = state;
-    }
-
-    public static PlayerDTO fromUser(User user) {
+    
+    public static PlayerDTO fromUser(User user, PlayerSymbol symbol) {
         return new PlayerDTO(
                 user.getUsername(),
                 user.getGender(),
                 user.getScore(),
-                user.getState()
+                user.getState(),
+                symbol
         );
     }
-
-    public String getUsername() {
-        return username;
+    
+    public PlayerSymbol getSymbol() {
+        return symbol;
     }
 
-    public UserGender getGender() {
-        return gender;
-    }
-
-    public int getScore() {
-        return score;
-    }
-
-    public UserState getState() {
-        return state;
+    public void setSymbol(PlayerSymbol symbol) {
+        this.symbol = symbol;
     }
 }
+

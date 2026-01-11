@@ -17,7 +17,7 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        int port = 4646;
+        int port = 4656;
         Server server = new Server(port);
         new Thread(server::start).start();
         scene = new Scene(loadFXML("server-ui"), 950, 650);

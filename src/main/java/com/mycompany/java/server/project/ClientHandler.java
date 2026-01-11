@@ -9,7 +9,7 @@ import data.Request;
 import data.Response;
 import dto.InvitationDTO;
 import dto.LoginDTO;
-import dto.PlayerDTO;
+import dto.UserDTO;
 import dto.RegisterDTO;
 import enums.InvitationStatus;
 import enums.RequestType;
@@ -22,8 +22,6 @@ import java.net.Socket;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.PriorityBlockingQueue;
-import models.MatchEntry;
 
 public class ClientHandler implements Runnable {
 
@@ -321,7 +319,7 @@ public class ClientHandler implements Runnable {
 
     private void handleOnlinePlayersRequest() {
         try {
-            List<PlayerDTO> onlineUsers = ServerContext.getOnlineUsers(loggedInUser.getUsername());
+            List<UserDTO> onlineUsers = ServerContext.getOnlineUsers(loggedInUser.getUsername());
             Response response = new Response(ResponseType.ONLINE_PLAYERS, gson.toJsonTree(onlineUsers));
             send(response);
 
@@ -332,7 +330,7 @@ public class ClientHandler implements Runnable {
 
     private void handleLeaderboardRequest() {
         try {
-            List<PlayerDTO> leaderboard = dao.getLeaderboard();
+            List<UserDTO> leaderboard = dao.getLeaderboard();
 
             Response response = new Response(ResponseType.LEADERBOARD, gson.toJsonTree(leaderboard));
             send(response);
