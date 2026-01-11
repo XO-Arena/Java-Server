@@ -71,6 +71,10 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleRequest(Request request) {
+        if (request == null || request.getType() == null) {
+            send(new Response(ResponseType.INVALID_DATA));
+            return;
+        }
         switch (request.getType()) {
             case LOGIN:
                 handleLogin(request.getPayload());
@@ -155,7 +159,15 @@ public class ClientHandler implements Runnable {
             }
 
             loggedInUser = user;
-            send(new Response(ResponseType.LOGIN_SUCCESS));
+            Response res = new Response(
+                    ResponseType.LOGIN_SUCCESS,
+                    gson.toJsonTree(user)
+            );
+
+            // ✅ تأكيد الإرسال
+            System.out.println("SENT TO CLIENT: " + gson.toJson(res));
+
+            send(res);
         } catch (JsonSyntaxException e) {
             send(new Response(ResponseType.ERROR));
         }
