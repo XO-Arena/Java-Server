@@ -39,18 +39,18 @@ public class ServerContext {
                 .collect(Collectors.toList());
     }
 
-   public static void broadcastOnlinePlayers() {
-    onlineClients.forEach((username, client) -> {
+    public static void broadcastOnlinePlayers(String loggedoutUsername) {
+        onlineClients.forEach((username, client) -> {
+            if (!username.equals(loggedoutUsername)) {
+                List<PlayerDTO> listForClient
+                        = getOnlineUsers(username);
+                Response response = new Response(
+                        ResponseType.ONLINE_PLAYERS,
+                        new Gson().toJsonTree(listForClient)
+                );
 
-        List<PlayerDTO> listForClient =
-                getOnlineUsers(username);
-
-        Response response = new Response(
-                ResponseType.ONLINE_PLAYERS,
-                new Gson().toJsonTree(listForClient)
-        );
-
-        client.send(response);
-    });
-}
+                client.send(response);
+            }
+        });
+    }
 }

@@ -136,6 +136,7 @@ public class ClientHandler implements Runnable {
             if (success) {
                 send(new Response(ResponseType.REGISTER_SUCCESS));
                 loggedInUser = new User(username, gender);
+                ServerContext.broadcastOnlinePlayers(username);
             } else {
                 send(new Response(ResponseType.USER_EXISTS));
             }
@@ -175,7 +176,7 @@ public class ClientHandler implements Runnable {
                     gson.toJsonTree(user)
             );
             send(res);
-            ServerContext.broadcastOnlinePlayers();
+            ServerContext.broadcastOnlinePlayers(username);
         } catch (JsonSyntaxException e) {
             send(new Response(ResponseType.ERROR));
         }
@@ -205,18 +206,19 @@ public class ClientHandler implements Runnable {
         // TODO: implement leave game
     }
 
-    private void handleLogout() {
-        if (loggedInUser == null) {
-            return;
-        }
-
-        String username = loggedInUser.getUsername();
-
-        ServerContext.removeClient(username);
-        loggedInUser = null;
-        ServerContext.broadcastOnlinePlayers();
-
+  private void handleLogout() {
+    if (loggedInUser == null) {
+        return;
     }
+    
+    String username = loggedInUser.getUsername();
+
+    ServerContext.removeClient(username);
+    loggedInUser = null;
+    ServerContext.broadcastOnlinePlayers(username);
+
+}
+
 
     private void handleUnknownRequest(RequestType request) {
         System.out.println("Received unknown request: " + request);
@@ -232,6 +234,8 @@ public class ClientHandler implements Runnable {
         try {
             if (loggedInUser != null) {
                 ServerContext.removeClient(loggedInUser.getUsername());
+                ServerContext.broadcastOnlinePlayers(loggedInUser.getUsername());
+                loggedInUser = null;
             }
             if (socket.isClosed()) {
                 socket.close();
@@ -239,7 +243,7 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        ServerContext.broadcastOnlinePlayers();
+         
     }
 
     public User getLoggedInUser() {
