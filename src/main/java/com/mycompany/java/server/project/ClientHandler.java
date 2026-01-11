@@ -7,14 +7,18 @@ import dao.UserDAO;
 import data.Request;
 import data.Response;
 import dto.LoginDTO;
+import dto.PlayerDTO;
 import dto.RegisterDTO;
 import enums.RequestType;
 import enums.ResponseType;
 import enums.UserGender;
+import enums.UserState;
 import models.User;
 
 import java.io.*;
 import java.net.Socket;
+import java.sql.SQLException;
+import java.util.List;
 
 public class ClientHandler implements Runnable {
 
@@ -82,6 +86,12 @@ public class ClientHandler implements Runnable {
             case REGISTER:
                 handleRegister(request.getPayload());
                 break;
+            case GET_ONLINE_PLAYERS:
+                handleOnlinePlayersRequest();
+                break;
+            case GET_LEADERBOARD:
+                handleLeaderboardRequest();
+                break;
             case INVITE:
                 handleInvite();
                 break;
@@ -126,6 +136,7 @@ public class ClientHandler implements Runnable {
 
             if (success) {
                 send(new Response(ResponseType.REGISTER_SUCCESS));
+                loggedInUser = new User(username, gender);
             } else {
                 send(new Response(ResponseType.USER_EXISTS));
             }
@@ -157,7 +168,7 @@ public class ClientHandler implements Runnable {
                 send(new Response(ResponseType.ALREADY_LOGGED_IN));
                 return;
             }
-
+            user.setState(UserState.ONLINE);
             loggedInUser = user;
             Response res = new Response(
                     ResponseType.LOGIN_SUCCESS,
@@ -232,4 +243,28 @@ public class ClientHandler implements Runnable {
     public void setLoggedInUser(User loggedInUser) {
         this.loggedInUser = loggedInUser;
     }
+
+    private void handleOnlinePlayersRequest() {
+        try {
+            List<PlayerDTO> onlineUsers = ServerContext.getOnlineUsers();
+            Response response = new Response(ResponseType.ONLINE_PLAYERS, gson.toJsonTree(onlineUsers));
+            send(response);
+            
+        } catch (Exception e) {
+            send(new Response(ResponseType.ERROR));
+        }
+    }
+
+    private void handleLeaderboardRequest() {
+        try {
+            List<PlayerDTO> leaderboard = dao.getLeaderboard();
+
+            Response response = new Response(ResponseType.LEADERBOARD,gson.toJsonTree(leaderboard));
+            send(response);
+
+        } catch (SQLException e) {
+            send(new Response(ResponseType.ERROR));
+        }
+    }
+
 }
