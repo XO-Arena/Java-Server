@@ -6,6 +6,7 @@ public enum RequestType {
     GET_ONLINE_PLAYERS,
     GET_LEADERBOARD,
     INVITE,
+    ACCEPT,
     REJECT,
     MAKE_MOVE,
     WATCH,
