@@ -1,5 +1,6 @@
 package com.mycompany.java.server.project;
 
+import dao.UserDAO;
 import dto.PlayerDTO;
 import java.util.List;
 import java.util.Objects;
@@ -22,17 +23,26 @@ public class ServerContext {
         return onlineClients.get(username);
     }
 
-   public static List<PlayerDTO> getOnlineUsers() {
-    return onlineClients.values().stream()
-            .map(ClientHandler::getLoggedInUser)
-            .filter(Objects::nonNull)
-            .map(user -> new PlayerDTO(
-                    user.getUsername(),
-                    user.getGender(),
-                    user.getScore(),
-                    user.getState()
-            ))
-            .collect(Collectors.toList());
-}
+    public static List<PlayerDTO> getOnlineUsers() {
+        return onlineClients.values().stream()
+                .map(ClientHandler::getLoggedInUser)
+                .filter(Objects::nonNull)
+                .map(user -> new PlayerDTO(
+                user.getUsername(),
+                user.getGender(),
+                user.getScore(),
+                user.getState()
+        ))
+                .collect(Collectors.toList());
+    }
 
+    public static int getTotalRegisteredUsers() {
+        UserDAO userDAO = new UserDAO();
+        try {
+            return userDAO.getTotalRegisteredUsers();
+        } catch (Exception e) {
+            System.err.println("Error getting total registered users: " + e.getMessage());
+            return 0;
+        }
+    }
 }

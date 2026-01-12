@@ -110,30 +110,19 @@
 
 /* Card Labels */
 .card-label {
-    -fx-text-fill: #94a3b8;
+    -fx-text-fill: #64748b;
     -fx-font-size: 13px;
     -fx-font-weight: bold;
 }
 
-/* Card Values */
-.card-value {
-    -fx-font-size: 42px;
+.value-online,
+.value-offline,
+.value-total {
+    -fx-text-fill: #e5e7eb;
+    -fx-font-size: 24px;
     -fx-font-weight: bold;
 }
 
-.value-online {
-    -fx-text-fill: #22c55e;
-    -fx-effect: dropshadow(gaussian, rgba(34, 197, 94, 0.5), 15, 0, 0, 0);
-}
-
-.value-offline {
-    -fx-text-fill: #94a3b8;
-}
-
-.value-total {
-    -fx-text-fill: #3b82f6;
-    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.5), 15, 0, 0, 0);
-}
 
 /* Card Subtitle */
 .card-subtitle {
@@ -200,4 +189,11 @@
     -fx-fill: #1e293b;
     -fx-font-size: 13px;
     -fx-font-weight: normal;
+}
+.chart-pie.default-color0 {
+    -fx-pie-color: #22c55e;
+}
+
+.chart-pie.default-color1 {
+    -fx-pie-color: #ef4444;
 }

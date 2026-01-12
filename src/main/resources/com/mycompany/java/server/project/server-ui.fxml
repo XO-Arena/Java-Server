@@ -42,7 +42,7 @@
                         <Label text="●" styleClass="card-dot dot-online"/>
                         <Label text="Online Users" styleClass="card-label"/>
                     </HBox>
-                    <Label fx:id="onlineCountLabel" text="0" styleClass="card-value value-online"/>
+                    <Label fx:id="onlineCountLabel" text="0" styleClass="value-online"/>
                     <Label text="Active Connections" styleClass="card-subtitle"/>
                 </VBox>
                 
@@ -52,7 +52,7 @@
                         <Label text="●" styleClass="card-dot dot-offline"/>
                         <Label text="Offline Users" styleClass="card-label"/>
                     </HBox>
-                    <Label fx:id="offlineCountLabel" text="0" styleClass="card-value value-offline"/>
+                    <Label fx:id="offlineCountLabel" text="0" styleClass="value-offline"/>
                     <Label text="Disconnected" styleClass="card-subtitle"/>
                 </VBox>
                 
@@ -62,7 +62,7 @@
                         <Label text="●" styleClass="card-emoji"/>
                         <Label text="Total Users" styleClass="card-label"/>
                     </HBox>
-                    <Label fx:id="totalCountLabel" text="0" styleClass="card-value value-total"/>
+                    <Label fx:id="totalCountLabel" text="0" styleClass="value-total"/>
                     <Label text="Registered" styleClass="card-subtitle"/>
                 </VBox>
             </VBox>
