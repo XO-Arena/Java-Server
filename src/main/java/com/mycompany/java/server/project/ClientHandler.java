@@ -176,7 +176,6 @@ public class ClientHandler implements Runnable {
             }
             user.setState(UserState.ONLINE);
             loggedInUser = user;
-<<<<<<< HEAD
 
             Response res = new Response(
                     ResponseType.LOGIN_SUCCESS,
@@ -184,21 +183,6 @@ public class ClientHandler implements Runnable {
             );
             send(res);
             ServerContext.broadcastOnlinePlayers(username);
-=======
-            PlayerDTO playerDTO = new PlayerDTO(
-                    loggedInUser.getUsername(),
-                    loggedInUser.getGender(),
-                    loggedInUser.getScore(),
-                    loggedInUser.getState()
-            );
-
-            String player = gson.toJson(playerDTO, PlayerDTO.class);
-            System.out.println(player);
-            JsonElement playerJsonElement = JsonParser.parseString(player);
-
-            send(new Response(ResponseType.LOGIN_SUCCESS, playerJsonElement));
-
->>>>>>> 094362b (feat(server): implement invitation forwarding in ClientHandler)
         } catch (JsonSyntaxException e) {
             send(new Response(ResponseType.ERROR));
         }
