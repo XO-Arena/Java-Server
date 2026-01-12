@@ -1,5 +1,5 @@
 package com.mycompany.java.server.project;
-
+import dao.UserDAO;
 import com.google.gson.Gson;
 import data.Response;
 import dto.PlayerDTO;
@@ -45,7 +45,16 @@ public class ServerContext {
                 .collect(Collectors.toList());
     }
 
-    public static void broadcastOnlinePlayers(String loggedoutUsername) {
+    public static int getTotalRegisteredUsers() {
+        UserDAO userDAO = new UserDAO();
+        try {
+            return userDAO.getTotalRegisteredUsers();
+        } catch (Exception e) {
+            System.err.println("Error getting total registered users: " + e.getMessage());
+            return 0;
+        }
+    }
+   public static void broadcastOnlinePlayers(String loggedoutUsername) {
         onlineClients.forEach((username, client) -> {
             if (!username.equals(loggedoutUsername)) {
                 List<PlayerDTO> listForClient
@@ -58,5 +67,4 @@ public class ServerContext {
                 client.send(response);
             }
         });
-    }
 }

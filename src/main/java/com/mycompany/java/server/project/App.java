@@ -20,7 +20,7 @@ public class App extends Application {
         int port = 4646;
         Server server = new Server(port);
         new Thread(server::start).start();
-        scene = new Scene(loadFXML("primary"), 640, 480);
+        scene = new Scene(loadFXML("server-ui"), 950, 650);
         stage.setScene(scene);
         stage.show();
     }

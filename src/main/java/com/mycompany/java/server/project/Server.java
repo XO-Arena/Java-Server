@@ -8,6 +8,7 @@ public class Server {
 
     private final int port;
     private boolean running = true;
+    private ServerSocket serverSocket;
 
     public Server(int port) {
         this.port = port;
@@ -16,8 +17,9 @@ public class Server {
     public void start() {
         System.out.println("Server starting on port " + port);
 
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-
+        try {
+            serverSocket = new ServerSocket(port);
+            running = true;
             while (running) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("New client connected");
@@ -33,5 +35,12 @@ public class Server {
 
     public void stop() {
         running = false;
+        if (serverSocket != null && !serverSocket.isClosed()) {
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

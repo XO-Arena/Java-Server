@@ -126,12 +126,12 @@ public class UserDAO {
         }
         return null;
     }
-     public List<PlayerDTO> getLeaderboard() throws SQLException {
+
+    public List<PlayerDTO> getLeaderboard() throws SQLException {
         List<PlayerDTO> leaderboard = new ArrayList<>();
 
-        String sql = "SELECT username, score, gender FROM users ORDER BY score DESC"; 
-        try (Connection conn = DBUtil.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+        String sql = "SELECT username, score, gender FROM users ORDER BY score DESC";
+        try (Connection conn = DBUtil.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
                 PlayerDTO player = new PlayerDTO(
@@ -145,5 +145,18 @@ public class UserDAO {
         }
 
         return leaderboard;
+    }
+
+    // get total users in the appliaction
+    public int getTotalRegisteredUsers() {
+        String sql = "SELECT COUNT(*)FROM users";
+        try (Connection conn = DBUtil.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            return 0;
+        } catch (SQLException e) {
+            return 0;
+        }
     }
 }
