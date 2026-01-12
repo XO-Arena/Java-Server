@@ -19,7 +19,9 @@ public class App extends Application {
     public void start(Stage stage) throws IOException {
         int port = 4656;
         Server server = new Server(port);
-        new Thread(server::start).start();
+        Thread thread = new Thread(server::start);
+        thread.setDaemon(true);
+        thread.start();
         scene = new Scene(loadFXML("server-ui"), 950, 650);
         stage.setScene(scene);
         stage.show();
