@@ -240,7 +240,7 @@ public class ClientHandler implements Runnable {
 
             senderHandler.send(acceptResponse);
             receiverHandler.send(acceptResponse);
-
+            
             System.out.println("Match Started: " + inviteDTO.getSenderUsername() + " VS " + inviteDTO.getReceiverUsername());
 
         }
