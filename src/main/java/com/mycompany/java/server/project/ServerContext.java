@@ -113,6 +113,10 @@ public class ServerContext {
                     ClientHandler client1 = matchmakingQueue.take().getClient();
                     ClientHandler client2 = matchmakingQueue.take().getClient();
 
+                    client1.getLoggedInUser().setState(enums.UserState.IN_GAME);
+                    client2.getLoggedInUser().setState(enums.UserState.IN_GAME);
+                    broadcastOnlinePlayers();
+
                     GameSession session = createGameSession(client1, client2);
                     GameSessionDTO dto = GameSessionDTO.fromModel(session);
 

@@ -23,11 +23,12 @@ public class GameSessionDTO {
     private SessionStatus status;
     private int player1Wins;
     private int player2Wins;
+    private int draws;
 
     public GameSessionDTO() {
     }
 
-    public GameSessionDTO(String sessionId, PlayerDTO player1, PlayerDTO player2, PlayerSymbol currentTurn, BoardDTO board, GameResult result, SessionStatus status, int player1Wins, int player2Wins) {
+    public GameSessionDTO(String sessionId, PlayerDTO player1, PlayerDTO player2, PlayerSymbol currentTurn, BoardDTO board, GameResult result, SessionStatus status, int player1Wins, int player2Wins, int draws) {
         this.sessionId = sessionId;
         this.player1 = player1;
         this.player2 = player2;
@@ -37,6 +38,7 @@ public class GameSessionDTO {
         this.status = status;
         this.player1Wins = player1Wins;
         this.player2Wins = player2Wins;
+        this.draws = draws;
     }
     
     public static GameSessionDTO fromModel(GameSession gameSession) {
@@ -49,7 +51,8 @@ public class GameSessionDTO {
                 gameSession.getLastResult(),
                 gameSession.isGameEnded() ? SessionStatus.FINISHED : SessionStatus.IN_PROGRESS,
                 gameSession.getPlayer1Wins(),
-                gameSession.getPlayer2Wins()
+                gameSession.getPlayer2Wins(),
+                gameSession.getDrawCount()
         );
     }
 
@@ -123,5 +126,13 @@ public class GameSessionDTO {
 
     public void setPlayer2Wins(int player2Wins) {
         this.player2Wins = player2Wins;
+    }
+    
+    public int getDraws() {
+        return draws;
+    }
+
+    public void setDraws(int draws) {
+        this.draws = draws;
     }
 }

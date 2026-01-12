@@ -256,6 +256,7 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleMakeMove(JsonElement payload) {
+        System.out.println("Received MAKE_MOVE from " + (loggedInUser != null ? loggedInUser.getUsername() : "null"));
         try {
             MoveDTO move = gson.fromJson(payload, MoveDTO.class);
             GameSession session = ServerContext.getSession(move.getSessionId());
@@ -263,15 +264,19 @@ public class ClientHandler implements Runnable {
                 if (session.getCurrentPlayer().getUsername().equals(loggedInUser.getUsername())) {
                     boolean success = session.playMove(move.getRow(), move.getCol(), move.getSymbol());
                     if (!success) {
+                        System.out.println("Move failed for user: " + loggedInUser.getUsername());
                         send(new Response(ResponseType.ERROR, gson.toJsonTree("Invalid move")));
                     }
                 } else {
+                    System.out.println("Not turn for user: " + loggedInUser.getUsername());
                     send(new Response(ResponseType.ERROR, gson.toJsonTree("Not your turn")));
                 }
             } else {
+                System.out.println("Session not found for move from: " + loggedInUser.getUsername());
                 send(new Response(ResponseType.ERROR, gson.toJsonTree("Session not found")));
             }
         } catch (JsonSyntaxException e) {
+            e.printStackTrace();
             send(new Response(ResponseType.ERROR));
         }
     }
@@ -320,6 +325,7 @@ public class ClientHandler implements Runnable {
 
     public synchronized void send(Response response) {
         String json = gson.toJson(response);
+        // System.out.println("Sending to " + (loggedInUser != null ? loggedInUser.getUsername() : "unknown") + ": " + response.getType());
         out.println(json);
     }
 

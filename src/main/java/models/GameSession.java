@@ -6,12 +6,14 @@ package models;
 
 import com.google.gson.Gson;
 import com.mycompany.java.server.project.ClientHandler;
+import com.mycompany.java.server.project.ServerContext;
 import dao.UserDAO;
 import data.Response;
 import dto.GameSessionDTO;
 import enums.GameResult;
 import enums.PlayerSymbol;
 import enums.ResponseType;
+import enums.UserState;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -56,7 +58,7 @@ public class GameSession {
         this.spectatorsList = new ArrayList<>();
     }
 
-    public void startNewGame() {
+    public synchronized void startNewGame() {
         this.game = new Game();
         this.lastResult = GameResult.NONE;
         broadcastUpdate();
@@ -78,21 +80,24 @@ public class GameSession {
         return this.player2Wins;
     }
 
-    public void leaveMatch(String leavingUsername) {
+    public synchronized void leaveMatch(String leavingUsername) {
         if (game.hasEnded()) {
             return;
         }
         game.setHasEnded(true);
         if (player1.getUsername().equals(leavingUsername)) {
             lastResult = (player1.getSymbol() == PlayerSymbol.X) ? GameResult.O_WIN : GameResult.X_WIN;
+            player1Handler.getLoggedInUser().setState(UserState.ONLINE);
         } else {
             lastResult = (player1.getSymbol() == PlayerSymbol.X) ? GameResult.X_WIN : GameResult.O_WIN;
+            player2Handler.getLoggedInUser().setState(UserState.ONLINE);
         }
+        ServerContext.broadcastOnlinePlayers();
         handleGameEnd();
         broadcastUpdate();
     }
 
-    public boolean playMove(int row, int col, PlayerSymbol symbol) {
+    public synchronized boolean playMove(int row, int col, PlayerSymbol symbol) {
         if (game.hasEnded()) {
             return false;
         }
@@ -153,14 +158,14 @@ public class GameSession {
         }
     }
 
-    public void switchPlayerSymbols() {
+    public synchronized void switchPlayerSymbols() {
         PlayerSymbol s1 = player1.getSymbol();
         player1.setSymbol(player2.getSymbol());
         player2.setSymbol(s1);
         broadcastUpdate();
     }
 
-    public void resetSession() {
+    public synchronized void resetSession() {
         game.reset();
         lastResult = GameResult.NONE;
         broadcastUpdate();
@@ -183,12 +188,16 @@ public class GameSession {
         }
     }
 
-    public void addSpectator(ClientHandler spectator) {
+    public synchronized void addSpectator(ClientHandler spectator) {
+        spectator.getLoggedInUser().setState(UserState.SPECTATING);
+        ServerContext.broadcastOnlinePlayers();
         spectatorsList.add(spectator);
         spectator.send(new Response(ResponseType.GAME_UPDATE, new Gson().toJsonTree(GameSessionDTO.fromModel(this))));
     }
 
-    public void removeSpectator(ClientHandler spectator) {
+    public synchronized void removeSpectator(ClientHandler spectator) {
+        spectator.getLoggedInUser().setState(UserState.ONLINE);
+        ServerContext.broadcastOnlinePlayers();
         spectatorsList.remove(spectator);
     }
 
