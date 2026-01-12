@@ -315,7 +315,7 @@ public class ClientHandler implements Runnable {
             String sessionId = payload.getAsString();
             GameSession session = ServerContext.getSession(sessionId);
             if (session != null) {
-                session.leaveMatch(loggedInUser.getUsername());
+                session.handleDisconnect(loggedInUser.getUsername());
                 if (session.isGameEnded()) {
                     ServerContext.removeSession(sessionId);
                 }
@@ -351,6 +351,7 @@ public class ClientHandler implements Runnable {
         running = false;
         try {
             if (loggedInUser != null) {
+                ServerContext.handleClientDisconnect(loggedInUser.getUsername());
                 ServerContext.removeClient(loggedInUser.getUsername());
                 ServerContext.broadcastOnlinePlayers(loggedInUser.getUsername());
                 loggedInUser = null;

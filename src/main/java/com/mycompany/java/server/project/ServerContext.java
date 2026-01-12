@@ -158,4 +158,10 @@ public class ServerContext {
     public static void removeSession(String sessionId) {
         activeSessions.remove(sessionId);
     }
+
+    public static void handleClientDisconnect(String username) {
+        activeSessions.values().stream()
+                .filter(s -> s.getPlayer1().getUsername().equals(username) || s.getPlayer2().getUsername().equals(username))
+                .forEach(s -> s.handleDisconnect(username));
+    }
 }

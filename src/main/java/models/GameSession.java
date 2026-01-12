@@ -45,6 +45,9 @@ public class GameSession {
     
     private boolean player1Rematch;
     private boolean player2Rematch;
+    
+    private boolean player1Left;
+    private boolean player2Left;
 
     public GameSession(ClientHandler player1Handler, ClientHandler player2Handler) {
         sessionId = UUID.randomUUID().toString();
@@ -60,6 +63,9 @@ public class GameSession {
         
         this.player1Rematch = false;
         this.player2Rematch = false;
+        
+        this.player1Left = false;
+        this.player2Left = false;
 
         this.spectatorsList = new ArrayList<>();
     }
@@ -89,6 +95,8 @@ public class GameSession {
         this.lastResult = GameResult.NONE;
         this.player1Rematch = false;
         this.player2Rematch = false;
+        this.player1Left = false;
+        this.player2Left = false;
         broadcastUpdate();
     }
 
@@ -109,7 +117,14 @@ public class GameSession {
     }
 
     public synchronized void leaveMatch(String leavingUsername) {
+        if (player1.getUsername().equals(leavingUsername)) {
+            player1Left = true;
+        } else if (player2.getUsername().equals(leavingUsername)) {
+            player2Left = true;
+        }
+
         if (game.hasEnded()) {
+            broadcastUpdate();
             return;
         }
         game.setHasEnded(true);
@@ -124,6 +139,24 @@ public class GameSession {
         handleGameEnd();
         broadcastUpdate();
     }
+
+    public synchronized void handleDisconnect(String username) {
+        if (!game.hasEnded()) {
+            leaveMatch(username);
+        }
+        
+        ClientHandler other = null;
+        if (player1.getUsername().equals(username)) {
+            other = player2Handler;
+        } else if (player2.getUsername().equals(username)) {
+            other = player1Handler;
+        }
+        
+        if (other != null) {
+            other.send(new Response(ResponseType.OPPONENT_LEFT));
+        }
+    }
+
 
     public synchronized boolean playMove(int row, int col, PlayerSymbol symbol) {
         if (game.hasEnded()) {
@@ -258,6 +291,14 @@ public class GameSession {
         return spectatorsList.stream()
                 .map(handler -> Player.fromUser(handler.getLoggedInUser(), null))
                 .collect(Collectors.toList());
+    }
+
+    public boolean isPlayer1Left() {
+        return player1Left;
+    }
+
+    public boolean isPlayer2Left() {
+        return player2Left;
     }
 
 }
