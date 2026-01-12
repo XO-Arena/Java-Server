@@ -13,5 +13,6 @@ public enum RequestType {
     QUICK_GAME,
     LEAVE_QUEUE,
     LEAVE_GAME,
-    LOGOUT
+    LOGOUT,
+    REMATCH_REQUEST
 }

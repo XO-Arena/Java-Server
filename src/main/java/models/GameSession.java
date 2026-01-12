@@ -42,6 +42,9 @@ public class GameSession {
 
     private GameResult lastResult;
     private List<ClientHandler> spectatorsList;
+    
+    private boolean player1Rematch;
+    private boolean player2Rematch;
 
     public GameSession(ClientHandler player1Handler, ClientHandler player2Handler) {
         sessionId = UUID.randomUUID().toString();
@@ -54,13 +57,38 @@ public class GameSession {
         this.game = new Game();
         this.lastResult = GameResult.NONE;
         this.player1Wins = this.player2Wins = this.drawCount = 0;
+        
+        this.player1Rematch = false;
+        this.player2Rematch = false;
 
         this.spectatorsList = new ArrayList<>();
+    }
+    
+    public synchronized void requestRematch(String username) {
+        boolean isPlayer1 = player1.getUsername().equals(username);
+        
+        if (isPlayer1) {
+            player1Rematch = true;
+        } else {
+            player2Rematch = true;
+        }
+        
+        if (player1Rematch && player2Rematch) {
+            startNewGame();
+        } else {
+            // Notify the other player
+            ClientHandler other = isPlayer1 ? player2Handler : player1Handler;
+            if (other != null) {
+                other.send(new Response(ResponseType.REMATCH_REQUESTED));
+            }
+        }
     }
 
     public synchronized void startNewGame() {
         this.game = new Game();
         this.lastResult = GameResult.NONE;
+        this.player1Rematch = false;
+        this.player2Rematch = false;
         broadcastUpdate();
     }
 

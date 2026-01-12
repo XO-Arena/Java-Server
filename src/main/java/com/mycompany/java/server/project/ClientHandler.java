@@ -124,9 +124,27 @@ public class ClientHandler implements Runnable {
             case LEAVE_QUEUE:
                 handleLeaveQueue();
                 break;
+            case REMATCH_REQUEST:
+                handleRematchRequest(request.getPayload());
+                break;
             default:
                 handleUnknownRequest(request.getType());
                 break;
+        }
+    }
+
+    private void handleRematchRequest(JsonElement payload) {
+        if (payload == null || payload.isJsonNull()) {
+            return;
+        }
+        try {
+            String sessionId = payload.getAsString();
+            GameSession session = ServerContext.getSession(sessionId);
+            if (session != null) {
+                session.requestRematch(loggedInUser.getUsername());
+            }
+        } catch (Exception e) {
+            send(new Response(ResponseType.ERROR));
         }
     }
 
