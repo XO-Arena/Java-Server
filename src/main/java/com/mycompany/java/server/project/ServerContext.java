@@ -2,6 +2,7 @@ package com.mycompany.java.server.project;
 import dao.UserDAO;
 import com.google.gson.Gson;
 import data.Response;
+import dto.GameSessionDTO;
 import dto.PlayerDTO;
 import dto.UserDTO;
 import enums.PlayerSymbol;
@@ -12,12 +13,14 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Collectors;
+import models.GameSession;
 import models.MatchEntry;
 
 public class ServerContext {
 
     private static final ConcurrentHashMap<String, ClientHandler> onlineClients = new ConcurrentHashMap<>();
     private static final PriorityBlockingQueue<MatchEntry> matchmakingQueue = new PriorityBlockingQueue<>(10, Comparator.comparingInt(MatchEntry::getScore));
+    private static final ConcurrentHashMap<String, GameSession> activeSessions = new ConcurrentHashMap<>();
 
     public static boolean addClient(String username, ClientHandler handler) {
         return onlineClients.putIfAbsent(username, handler) == null;
@@ -110,10 +113,13 @@ public class ServerContext {
                     ClientHandler client1 = matchmakingQueue.take().getClient();
                     ClientHandler client2 = matchmakingQueue.take().getClient();
 
-                    PlayerDTO[] players = {PlayerDTO.fromUser(client1.getLoggedInUser(), PlayerSymbol.X), PlayerDTO.fromUser(client2.getLoggedInUser(), PlayerSymbol.O)};
-                    Response response = new Response(ResponseType.JOIN_GAME, gson.toJsonTree(players));
+                    GameSession session = createGameSession(client1, client2);
+                    GameSessionDTO dto = GameSessionDTO.fromModel(session);
+
+                    Response response = new Response(ResponseType.GAME_STARTED, gson.toJsonTree(dto));
                     client1.send(response);
                     client2.send(response);
+
                     leaveMatchmaking(client1);
                     leaveMatchmaking(client2);
                 }
@@ -133,5 +139,19 @@ public class ServerContext {
 
     public static PriorityBlockingQueue<MatchEntry> getMatchmakingQueue() {
         return matchmakingQueue;
+    }
+
+    public static GameSession createGameSession(ClientHandler p1, ClientHandler p2) {
+        GameSession session = new GameSession(p1, p2);
+        activeSessions.put(session.getSessionId(), session);
+        return session;
+    }
+
+    public static GameSession getSession(String sessionId) {
+        return activeSessions.get(sessionId);
+    }
+
+    public static void removeSession(String sessionId) {
+        activeSessions.remove(sessionId);
     }
 }

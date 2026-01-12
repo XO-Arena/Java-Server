@@ -1,0 +1,226 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package models;
+
+import com.google.gson.Gson;
+import com.mycompany.java.server.project.ClientHandler;
+import dao.UserDAO;
+import data.Response;
+import dto.GameSessionDTO;
+import enums.GameResult;
+import enums.PlayerSymbol;
+import enums.ResponseType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+/**
+ *
+ * @author mohannad
+ */
+public class GameSession {
+
+    private String sessionId;
+
+    private Game game;
+    private ClientHandler player1Handler;
+    private ClientHandler player2Handler;
+
+    private Player player1;
+    private Player player2;
+
+    private UserDAO userDAO = new UserDAO();
+
+    private int drawCount;
+    private int player1Wins;
+    private int player2Wins;
+
+    private GameResult lastResult;
+    private List<ClientHandler> spectatorsList;
+
+    public GameSession(ClientHandler player1Handler, ClientHandler player2Handler) {
+        sessionId = UUID.randomUUID().toString();
+
+        this.player1Handler = player1Handler;
+        this.player2Handler = player2Handler;
+        player1 = Player.fromUser(player1Handler.getLoggedInUser(), PlayerSymbol.X);
+        player2 = Player.fromUser(player2Handler.getLoggedInUser(), PlayerSymbol.O);
+
+        this.game = new Game();
+        this.lastResult = GameResult.NONE;
+        this.player1Wins = this.player2Wins = this.drawCount = 0;
+
+        this.spectatorsList = new ArrayList<>();
+    }
+
+    public void startNewGame() {
+        this.game = new Game();
+        this.lastResult = GameResult.NONE;
+        broadcastUpdate();
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public Game getGame() {
+        return game;
+    }
+
+    public int getPlayer1Wins() {
+        return this.player1Wins;
+    }
+
+    public int getPlayer2Wins() {
+        return this.player2Wins;
+    }
+
+    public void leaveMatch(String leavingUsername) {
+        if (game.hasEnded()) {
+            return;
+        }
+        game.setHasEnded(true);
+        if (player1.getUsername().equals(leavingUsername)) {
+            lastResult = (player1.getSymbol() == PlayerSymbol.X) ? GameResult.O_WIN : GameResult.X_WIN;
+        } else {
+            lastResult = (player1.getSymbol() == PlayerSymbol.X) ? GameResult.X_WIN : GameResult.O_WIN;
+        }
+        handleGameEnd();
+        broadcastUpdate();
+    }
+
+    public boolean playMove(int row, int col, PlayerSymbol symbol) {
+        if (game.hasEnded()) {
+            return false;
+        }
+        boolean success = game.playMove(row, col, symbol);
+        if (!success) {
+            return false;
+        }
+        lastResult = game.checkResult();
+        if (lastResult == GameResult.NONE) {
+            game.switchPlayer();
+        } else {
+            handleGameEnd();
+        }
+        broadcastUpdate();
+        return true;
+    }
+
+    private Player getPlayerWithSymbol(PlayerSymbol symbol) {
+        return player1.getSymbol() == symbol ? player1 : player2;
+    }
+
+    private void handleGameEnd() {
+        game.setHasEnded(true);
+        int rewardPoints = 10;
+        Player playerX = getPlayerWithSymbol(PlayerSymbol.X);
+        Player playerO = getPlayerWithSymbol(PlayerSymbol.O);
+        switch (lastResult) {
+            case X_WIN:
+                if (playerX.getScore() - playerO.getScore() > 50) {
+                    rewardPoints /= 2;
+                }
+                playerX.updateScore(rewardPoints);
+                userDAO.updateUserScore(playerX.getUsername(), playerX.getScore());
+                playerO.updateScore(-rewardPoints);
+                userDAO.updateUserScore(playerO.getUsername(), playerO.getScore());
+                if (playerX.equals(player1)) {
+                    player1Wins++;
+                } else {
+                    player2Wins++;
+                }
+                break;
+            case O_WIN:
+                if (playerO.getScore() - playerX.getScore() > 50) {
+                    rewardPoints /= 2;
+                }
+                playerO.updateScore(rewardPoints);
+                userDAO.updateUserScore(playerO.getUsername(), playerO.getScore());
+                playerX.updateScore(-rewardPoints);
+                userDAO.updateUserScore(playerX.getUsername(), playerX.getScore());
+                if (playerO.equals(player1)) {
+                    player1Wins++;
+                } else {
+                    player2Wins++;
+                }
+                break;
+            case DRAW:
+                drawCount++;
+        }
+    }
+
+    public void switchPlayerSymbols() {
+        PlayerSymbol s1 = player1.getSymbol();
+        player1.setSymbol(player2.getSymbol());
+        player2.setSymbol(s1);
+        broadcastUpdate();
+    }
+
+    public void resetSession() {
+        game.reset();
+        lastResult = GameResult.NONE;
+        broadcastUpdate();
+    }
+
+    private void broadcastUpdate() {
+        Response response = new Response(ResponseType.GAME_UPDATE, new Gson().toJsonTree(GameSessionDTO.fromModel(this)));
+        broadcast(response);
+    }
+
+    private void broadcast(Response response) {
+        if (player1Handler != null) {
+            player1Handler.send(response);
+        }
+        if (player2Handler != null) {
+            player2Handler.send(response);
+        }
+        for (ClientHandler spectator : spectatorsList) {
+            spectator.send(response);
+        }
+    }
+
+    public void addSpectator(ClientHandler spectator) {
+        spectatorsList.add(spectator);
+        spectator.send(new Response(ResponseType.GAME_UPDATE, new Gson().toJsonTree(GameSessionDTO.fromModel(this))));
+    }
+
+    public void removeSpectator(ClientHandler spectator) {
+        spectatorsList.remove(spectator);
+    }
+
+    public Player getCurrentPlayer() {
+
+        return game.getCurrentPlayer() == PlayerSymbol.X ? getPlayerWithSymbol(PlayerSymbol.X) : getPlayerWithSymbol(PlayerSymbol.O);
+    }
+
+    public GameResult getLastResult() {
+        return lastResult;
+    }
+
+    public boolean isGameEnded() {
+        return game.hasEnded();
+    }
+
+    public int getDrawCount() {
+        return drawCount;
+    }
+
+    public Player getPlayer1() {
+        return player1;
+    }
+
+    public Player getPlayer2() {
+        return player2;
+    }
+
+    public List<Player> getSpectators() {
+        return spectatorsList.stream()
+                .map(handler -> Player.fromUser(handler.getLoggedInUser(), null))
+                .collect(Collectors.toList());
+    }
+
+}

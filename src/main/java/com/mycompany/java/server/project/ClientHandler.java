@@ -10,6 +10,7 @@ import data.Response;
 import dto.InvitationDTO;
 import dto.LoginDTO;
 import dto.UserDTO;
+import dto.MoveDTO;
 import dto.RegisterDTO;
 import enums.InvitationStatus;
 import enums.RequestType;
@@ -22,6 +23,7 @@ import java.net.Socket;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
+import models.GameSession;
 
 public class ClientHandler implements Runnable {
 
@@ -105,7 +107,7 @@ public class ClientHandler implements Runnable {
                 handleAccept(request);
                 break;
             case MAKE_MOVE:
-                handleMakeMove();
+                handleMakeMove(request.getPayload());
                 break;
             case WATCH:
                 handleWatch();
@@ -114,7 +116,7 @@ public class ClientHandler implements Runnable {
                 handleQuickGame();
                 break;
             case LEAVE_GAME:
-                handleLeaveGame();
+                handleLeaveGame(request.getPayload());
                 break;
             case LOGOUT:
                 handleLogout();
@@ -253,8 +255,25 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleMakeMove() {
-        // TODO: implement make move
+    private void handleMakeMove(JsonElement payload) {
+        try {
+            MoveDTO move = gson.fromJson(payload, MoveDTO.class);
+            GameSession session = ServerContext.getSession(move.getSessionId());
+            if (session != null) {
+                if (session.getCurrentPlayer().getUsername().equals(loggedInUser.getUsername())) {
+                    boolean success = session.playMove(move.getRow(), move.getCol(), move.getSymbol());
+                    if (!success) {
+                        send(new Response(ResponseType.ERROR, gson.toJsonTree("Invalid move")));
+                    }
+                } else {
+                    send(new Response(ResponseType.ERROR, gson.toJsonTree("Not your turn")));
+                }
+            } else {
+                send(new Response(ResponseType.ERROR, gson.toJsonTree("Session not found")));
+            }
+        } catch (JsonSyntaxException e) {
+            send(new Response(ResponseType.ERROR));
+        }
     }
 
     private void handleWatch() {
@@ -265,23 +284,35 @@ public class ClientHandler implements Runnable {
         ServerContext.joinMatchmakingQueue(this);
     }
 
-    private void handleLeaveGame() {
-        // TODO: implement leave game
+    private void handleLeaveGame(JsonElement payload) {
+        if (payload == null || payload.isJsonNull()) {
+            return;
+        }
+        try {
+            String sessionId = payload.getAsString();
+            GameSession session = ServerContext.getSession(sessionId);
+            if (session != null) {
+                session.leaveMatch(loggedInUser.getUsername());
+                if (session.isGameEnded()) {
+                    ServerContext.removeSession(sessionId);
+                }
+            }
+        } catch (Exception e) {
+            send(new Response(ResponseType.ERROR));
+        }
     }
 
-  private void handleLogout() {
-    if (loggedInUser == null) {
-        return;
+    private void handleLogout() {
+        if (loggedInUser == null) {
+            return;
+        }
+
+        String username = loggedInUser.getUsername();
+
+        ServerContext.removeClient(username);
+        loggedInUser = null;
+        ServerContext.broadcastOnlinePlayers(username);
     }
-    
-    String username = loggedInUser.getUsername();
-
-    ServerContext.removeClient(username);
-    loggedInUser = null;
-    ServerContext.broadcastOnlinePlayers(username);
-
-}
-
 
     private void handleUnknownRequest(RequestType request) {
         System.out.println("Received unknown request: " + request);
@@ -306,7 +337,7 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-         
+
     }
 
     public User getLoggedInUser() {
