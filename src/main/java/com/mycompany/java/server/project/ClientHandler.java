@@ -2,13 +2,16 @@ package com.mycompany.java.server.project;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import dao.UserDAO;
 import data.Request;
 import data.Response;
+import dto.InvitationDTO;
 import dto.LoginDTO;
 import dto.PlayerDTO;
 import dto.RegisterDTO;
+import enums.InvitationStatus;
 import enums.RequestType;
 import enums.ResponseType;
 import enums.UserGender;
@@ -92,10 +95,13 @@ public class ClientHandler implements Runnable {
                 handleLeaderboardRequest();
                 break;
             case INVITE:
-                handleInvite();
+                handleInvite(request);
                 break;
             case REJECT:
-                handleReject();
+                handleReject(request);
+                break;
+            case ACCEPT:
+                handleAccept(request);
                 break;
             case MAKE_MOVE:
                 handleMakeMove();
@@ -182,12 +188,61 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleInvite() {
-        // TODO: implement invite
+    private void handleInvite(Request request) {
+
+        InvitationDTO inviteDTO = gson.fromJson(request.getPayload(), InvitationDTO.class);
+        String receiverName = inviteDTO.getReceiverUsername();
+
+        ClientHandler receiverHandler = ServerContext.getClientHandler(receiverName);
+
+        if (receiverHandler != null) {
+
+            Response inviteResponse = new Response(ResponseType.GAME_INVITE, request.getPayload());
+
+            receiverHandler.send(inviteResponse);
+
+        } else {
+            InvitationDTO errorDto = new InvitationDTO(inviteDTO.getReceiverUsername(), inviteDTO.getSenderUsername(), InvitationStatus.REJECTED);
+            Response errorResponse = new Response(ResponseType.INVITE_REJECTED, gson.toJsonTree(errorDto));
+
+            this.send(errorResponse);
+        }
     }
 
-    private void handleReject() {
-        // TODO: implement reject
+    private void handleAccept(Request request) {
+
+        InvitationDTO inviteDTO = gson.fromJson(request.getPayload(), InvitationDTO.class);
+        String senderName = inviteDTO.getSenderUsername();
+        String reciverName = inviteDTO.getReceiverUsername();
+
+        ClientHandler senderHandler = ServerContext.getClientHandler(senderName);
+        ClientHandler receiverHandler = ServerContext.getClientHandler(reciverName);
+
+        if (senderHandler != null) {
+
+            Response acceptResponse = new Response(ResponseType.INVITE_ACCEPTED, gson.toJsonTree(inviteDTO));
+
+            senderHandler.send(acceptResponse);
+            receiverHandler.send(acceptResponse);
+            
+            System.out.println("Match Started: " + inviteDTO.getSenderUsername() + " VS " + inviteDTO.getReceiverUsername());
+
+        }
+    }
+
+    private void handleReject(Request request) {
+
+        InvitationDTO inviteDTO = gson.fromJson(request.getPayload(), InvitationDTO.class);
+        String senderName = inviteDTO.getSenderUsername();
+
+        ClientHandler senderHandler = ServerContext.getClientHandler(senderName);
+
+        if (senderHandler != null) {
+            Response rejectResponse = new Response(ResponseType.INVITE_REJECTED, gson.toJsonTree(inviteDTO));
+            senderHandler.send(rejectResponse);
+
+            System.out.println("Match Rejected: " + inviteDTO.getSenderUsername() + " was rejected by " + inviteDTO.getReceiverUsername());
+        }
     }
 
     private void handleMakeMove() {

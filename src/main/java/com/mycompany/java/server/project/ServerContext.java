@@ -24,6 +24,12 @@ public class ServerContext {
     public static ClientHandler getClientHandler(String username) {
         return onlineClients.get(username);
     }
+    
+    
+    public static boolean isClientExist(String username) {
+       
+        return onlineClients.containsKey(username);
+    }
 
     public static List<PlayerDTO> getOnlineUsers(String username) {
         return onlineClients.values().stream()
