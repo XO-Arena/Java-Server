@@ -298,5 +298,4 @@ public class GameSession {
     public boolean isPlayer2Left() {
         return player2Left;
     }
-
 }
