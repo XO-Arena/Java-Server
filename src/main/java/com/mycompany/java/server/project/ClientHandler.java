@@ -37,6 +37,7 @@ public class ClientHandler implements Runnable {
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
+        ServerContext.addClientHandler(this);
         this.dao = new UserDAO();
         this.gson = new Gson();
 
@@ -50,6 +51,7 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             running = false;
         }
+        
     }
 
     @Override
@@ -382,7 +384,7 @@ public class ClientHandler implements Runnable {
                 ServerContext.broadcastOnlinePlayers(loggedInUser.getUsername());
                 loggedInUser = null;
             }
-            if (socket.isClosed()) {
+            if (!socket.isClosed()) {
                 socket.close();
             }
         } catch (IOException e) {
@@ -442,5 +444,18 @@ public class ClientHandler implements Runnable {
         }
         final ClientHandler other = (ClientHandler) obj;
         return Objects.equals(this.loggedInUser, other.loggedInUser);
+    }
+    
+    public void close() {
+        try {
+            running = false;
+            try {
+                send(new Response(ResponseType.SERVER_SHUTDOWN, null));
+            } catch (Exception ignored) {
+            }
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+        } catch (IOException e) {}
     }
 }

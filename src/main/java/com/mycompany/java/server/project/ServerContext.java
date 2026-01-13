@@ -9,6 +9,7 @@ import dto.UserDTO;
 import enums.PlayerSymbol;
 import enums.ResponseType;
 import enums.UserState;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -24,6 +25,7 @@ public class ServerContext {
     private static final ConcurrentHashMap<String, ClientHandler> onlineClients = new ConcurrentHashMap<>();
     private static final PriorityBlockingQueue<MatchEntry> matchmakingQueue = new PriorityBlockingQueue<>(10, Comparator.comparingInt(MatchEntry::getScore));
     private static final ConcurrentHashMap<String, GameSession> activeSessions = new ConcurrentHashMap<>();
+    private static final List<ClientHandler> clientHandlersList = new ArrayList<>();
 
     public static boolean addClient(String username, ClientHandler handler) {
         return onlineClients.putIfAbsent(username, handler) == null;
@@ -197,4 +199,23 @@ public class ServerContext {
                 .filter(s -> s.getPlayer1().getUsername().equals(username) || s.getPlayer2().getUsername().equals(username))
                 .forEach(s -> s.handleDisconnect(username));
     }
+
+    public static void addClientHandler(ClientHandler handler) {
+        clientHandlersList.add(handler);
+    }
+
+    public static boolean removeClientHandler(ClientHandler handler) {
+        return clientHandlersList.remove(handler);
+    }
+
+    public static void shutdown() {
+        List<ClientHandler> clients = clientHandlersList;
+
+        for (ClientHandler client : clients) {
+            client.close();
+        }
+        clientHandlersList.clear();
+        onlineClients.clear();
+    }
+
 }

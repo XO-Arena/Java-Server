@@ -35,12 +35,13 @@ public class Server {
 
     public void stop() {
         running = false;
-        if (serverSocket != null && !serverSocket.isClosed()) {
-            try {
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+        } catch (IOException ignored) {
         }
+        ServerContext.shutdown();
     }
+
 }
