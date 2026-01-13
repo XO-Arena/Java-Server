@@ -250,14 +250,15 @@ public class ClientHandler implements Runnable {
         ClientHandler senderHandler = ServerContext.getClientHandler(senderName);
         ClientHandler receiverHandler = ServerContext.getClientHandler(reciverName);
 
-        if (senderHandler != null) {
+        if (senderHandler != null & receiverHandler != null) {
 
             Response acceptResponse = new Response(ResponseType.INVITE_ACCEPTED, gson.toJsonTree(inviteDTO));
 
             senderHandler.send(acceptResponse);
             receiverHandler.send(acceptResponse);
-
-            System.out.println("Match Started: " + inviteDTO.getSenderUsername() + " VS " + inviteDTO.getReceiverUsername());
+            ServerContext.startNewGame(senderHandler, receiverHandler);
+            
+//            System.out.println("Match Started: " + inviteDTO.getSenderUsername() + " VS " + inviteDTO.getReceiverUsername());
 
         }
     }
