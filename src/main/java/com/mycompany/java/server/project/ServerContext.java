@@ -169,10 +169,6 @@ public class ServerContext {
     
     public static void resetPlayerState(String username) {
         if (onlineClients.containsKey(username)) {
-//            for (Entry<String, GameSession> entry : activeSessions.entrySet()) {
-//                Session session = entry
-//                if (entry.getValue().getPlayer1())
-//            }
             onlineClients.get(username).getLoggedInUser().setState(UserState.ONLINE);
             broadcastOnlinePlayers();
         }
