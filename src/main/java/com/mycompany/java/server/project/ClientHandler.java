@@ -106,6 +106,10 @@ public class ClientHandler implements Runnable {
             case ACCEPT:
                 handleAccept(request);
                 break;
+            case CANCEL:
+                handleCancelInvitaion(request);
+
+                break;
             case MAKE_MOVE:
                 handleMakeMove(request.getPayload());
                 break;
@@ -252,7 +256,7 @@ public class ClientHandler implements Runnable {
 
             senderHandler.send(acceptResponse);
             receiverHandler.send(acceptResponse);
-            
+
             System.out.println("Match Started: " + inviteDTO.getSenderUsername() + " VS " + inviteDTO.getReceiverUsername());
 
         }
@@ -273,6 +277,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
+<<<<<<< HEAD
     private void handleMakeMove(JsonElement payload) {
         System.out.println("Received MAKE_MOVE from " + (loggedInUser != null ? loggedInUser.getUsername() : "null"));
         try {
@@ -297,6 +302,30 @@ public class ClientHandler implements Runnable {
             e.printStackTrace();
             send(new Response(ResponseType.ERROR));
         }
+=======
+    private void handleCancelInvitaion(Request request) {
+        InvitationDTO inviteDTO = gson.fromJson(request.getPayload(), InvitationDTO.class);
+        String receiverName = inviteDTO.getReceiverUsername();
+
+        ClientHandler receiverHandler = ServerContext.getClientHandler(receiverName);
+
+        if (receiverHandler != null) {
+
+            Response inviteResponse = new Response(ResponseType.INVITE_CANCELED, request.getPayload());
+
+            receiverHandler.send(inviteResponse);
+
+        } else {
+            InvitationDTO errorDto = new InvitationDTO(inviteDTO.getReceiverUsername(), inviteDTO.getSenderUsername(), InvitationStatus.REJECTED);
+            Response errorResponse = new Response(ResponseType.INVITE_REJECTED, gson.toJsonTree(errorDto));
+
+            this.send(errorResponse);
+        }
+    }
+
+    private void handleMakeMove() {
+        // TODO: implement make move
+>>>>>>> f2e78a4 (feat: enhance ClientHandler and ServerContext for cross-client messaging)
     }
 
     private void handleWatch() {
@@ -307,6 +336,7 @@ public class ClientHandler implements Runnable {
         ServerContext.joinMatchmakingQueue(this);
     }
 
+<<<<<<< HEAD
     private void handleLeaveGame(JsonElement payload) {
         if (payload == null || payload.isJsonNull()) {
             return;
@@ -337,6 +367,19 @@ public class ClientHandler implements Runnable {
         ServerContext.removeClient(username);
         loggedInUser = null;
         ServerContext.broadcastOnlinePlayers(username);
+=======
+    private void handleLogout() {
+        if (loggedInUser == null) {
+            return;
+        }
+
+        String username = loggedInUser.getUsername();
+
+        ServerContext.removeClient(username);
+        loggedInUser = null;
+        ServerContext.broadcastOnlinePlayers(username);
+
+>>>>>>> f2e78a4 (feat: enhance ClientHandler and ServerContext for cross-client messaging)
     }
 
     private void handleUnknownRequest(RequestType request) {
