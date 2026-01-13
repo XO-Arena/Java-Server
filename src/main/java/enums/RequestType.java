@@ -8,6 +8,7 @@ public enum RequestType {
     INVITE,
     ACCEPT,
     REJECT,
+    CANCEL,
     MAKE_MOVE,
     WATCH,
     QUICK_GAME,
