@@ -125,7 +125,7 @@ public class ServerController implements Initializable {
     private void updateStatistics() {
         // Get statistics
         int totalUsers = ServerContext.getTotalRegisteredUsers();
-        int onlineUsers = ServerContext.getOnlineUsers().size();
+        int onlineUsers = ServerContext.getOnlineUsers("").size();
         int offlineUsers = totalUsers - onlineUsers;
 
         // Update UI on JavaFX thread
