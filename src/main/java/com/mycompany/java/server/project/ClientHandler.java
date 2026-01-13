@@ -106,6 +106,10 @@ public class ClientHandler implements Runnable {
             case ACCEPT:
                 handleAccept(request);
                 break;
+            case CANCEL:
+                handleCancelInvitaion(request);
+
+                break;
             case MAKE_MOVE:
                 handleMakeMove(request.getPayload());
                 break;
@@ -246,14 +250,15 @@ public class ClientHandler implements Runnable {
         ClientHandler senderHandler = ServerContext.getClientHandler(senderName);
         ClientHandler receiverHandler = ServerContext.getClientHandler(reciverName);
 
-        if (senderHandler != null) {
+        if (senderHandler != null & receiverHandler != null) {
 
             Response acceptResponse = new Response(ResponseType.INVITE_ACCEPTED, gson.toJsonTree(inviteDTO));
 
             senderHandler.send(acceptResponse);
             receiverHandler.send(acceptResponse);
+            ServerContext.startNewGame(senderHandler, receiverHandler);
             
-            System.out.println("Match Started: " + inviteDTO.getSenderUsername() + " VS " + inviteDTO.getReceiverUsername());
+//            System.out.println("Match Started: " + inviteDTO.getSenderUsername() + " VS " + inviteDTO.getReceiverUsername());
 
         }
     }
@@ -272,8 +277,7 @@ public class ClientHandler implements Runnable {
             System.out.println("Match Rejected: " + inviteDTO.getSenderUsername() + " was rejected by " + inviteDTO.getReceiverUsername());
         }
     }
-
-    private void handleMakeMove(JsonElement payload) {
+ private void handleMakeMove(JsonElement payload) {
         System.out.println("Received MAKE_MOVE from " + (loggedInUser != null ? loggedInUser.getUsername() : "null"));
         try {
             MoveDTO move = gson.fromJson(payload, MoveDTO.class);
@@ -298,6 +302,26 @@ public class ClientHandler implements Runnable {
             send(new Response(ResponseType.ERROR));
         }
     }
+        private void handleCancelInvitaion(Request request) {
+        InvitationDTO inviteDTO = gson.fromJson(request.getPayload(), InvitationDTO.class);
+        String receiverName = inviteDTO.getReceiverUsername();
+
+        ClientHandler receiverHandler = ServerContext.getClientHandler(receiverName);
+
+        if (receiverHandler != null) {
+
+            Response inviteResponse = new Response(ResponseType.INVITE_CANCELED, request.getPayload());
+
+            receiverHandler.send(inviteResponse);
+
+        } else {
+            InvitationDTO errorDto = new InvitationDTO(inviteDTO.getReceiverUsername(), inviteDTO.getSenderUsername(), InvitationStatus.REJECTED);
+            Response errorResponse = new Response(ResponseType.INVITE_REJECTED, gson.toJsonTree(errorDto));
+
+            this.send(errorResponse);
+        }
+    }
+
 
     private void handleWatch() {
         // TODO: implement watch
