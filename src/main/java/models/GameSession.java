@@ -42,10 +42,10 @@ public class GameSession {
 
     private GameResult lastResult;
     private List<ClientHandler> spectatorsList;
-    
+
     private boolean player1Rematch;
     private boolean player2Rematch;
-    
+
     private boolean player1Left;
     private boolean player2Left;
 
@@ -60,25 +60,25 @@ public class GameSession {
         this.game = new Game();
         this.lastResult = GameResult.NONE;
         this.player1Wins = this.player2Wins = this.drawCount = 0;
-        
+
         this.player1Rematch = false;
         this.player2Rematch = false;
-        
+
         this.player1Left = false;
         this.player2Left = false;
 
         this.spectatorsList = new ArrayList<>();
     }
-    
+
     public synchronized void requestRematch(String username) {
         boolean isPlayer1 = player1.getUsername().equals(username);
-        
+
         if (isPlayer1) {
             player1Rematch = true;
         } else {
             player2Rematch = true;
         }
-        
+
         if (player1Rematch && player2Rematch) {
             startNewGame();
         } else {
@@ -144,19 +144,18 @@ public class GameSession {
         if (!game.hasEnded()) {
             leaveMatch(username);
         }
-        
+
         ClientHandler other = null;
         if (player1.getUsername().equals(username)) {
             other = player2Handler;
         } else if (player2.getUsername().equals(username)) {
             other = player1Handler;
         }
-        
+
         if (other != null) {
             other.send(new Response(ResponseType.OPPONENT_LEFT));
         }
     }
-
 
     public synchronized boolean playMove(int row, int col, PlayerSymbol symbol) {
         if (game.hasEnded()) {
@@ -263,7 +262,6 @@ public class GameSession {
     }
 
     public Player getCurrentPlayer() {
-
         return game.getCurrentPlayer() == PlayerSymbol.X ? getPlayerWithSymbol(PlayerSymbol.X) : getPlayerWithSymbol(PlayerSymbol.O);
     }
 

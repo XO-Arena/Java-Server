@@ -7,8 +7,10 @@ import dto.PlayerDTO;
 import dto.UserDTO;
 import enums.PlayerSymbol;
 import enums.ResponseType;
+import enums.UserState;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -156,7 +158,24 @@ public class ServerContext {
     }
 
     public static void removeSession(String sessionId) {
-        activeSessions.remove(sessionId);
+        GameSession session = activeSessions.remove(sessionId);
+        if (onlineClients.containsKey(session.getPlayer1().getUsername())) {
+            onlineClients.get(session.getPlayer1().getUsername()).getLoggedInUser().setState(UserState.ONLINE);
+        }
+        if (onlineClients.containsKey(session.getPlayer1().getUsername())) {
+            onlineClients.get(session.getPlayer2().getUsername()).getLoggedInUser().setState(UserState.ONLINE);
+        }
+    }
+    
+    public static void resetPlayerState(String username) {
+        if (onlineClients.containsKey(username)) {
+//            for (Entry<String, GameSession> entry : activeSessions.entrySet()) {
+//                Session session = entry
+//                if (entry.getValue().getPlayer1())
+//            }
+            onlineClients.get(username).getLoggedInUser().setState(UserState.ONLINE);
+            broadcastOnlinePlayers();
+        }
     }
 
     public static void handleClientDisconnect(String username) {

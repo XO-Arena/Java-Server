@@ -312,7 +312,9 @@ public class ClientHandler implements Runnable {
             return;
         }
         try {
+            System.out.println("Handle Game Leave: " + loggedInUser.getUsername());
             String sessionId = payload.getAsString();
+            ServerContext.resetPlayerState(loggedInUser.getUsername());
             GameSession session = ServerContext.getSession(sessionId);
             if (session != null) {
                 session.handleDisconnect(loggedInUser.getUsername());
