@@ -276,9 +276,7 @@ public class ClientHandler implements Runnable {
             System.out.println("Match Rejected: " + inviteDTO.getSenderUsername() + " was rejected by " + inviteDTO.getReceiverUsername());
         }
     }
-
-<<<<<<< HEAD
-    private void handleMakeMove(JsonElement payload) {
+ private void handleMakeMove(JsonElement payload) {
         System.out.println("Received MAKE_MOVE from " + (loggedInUser != null ? loggedInUser.getUsername() : "null"));
         try {
             MoveDTO move = gson.fromJson(payload, MoveDTO.class);
@@ -302,8 +300,8 @@ public class ClientHandler implements Runnable {
             e.printStackTrace();
             send(new Response(ResponseType.ERROR));
         }
-=======
-    private void handleCancelInvitaion(Request request) {
+    }
+        private void handleCancelInvitaion(Request request) {
         InvitationDTO inviteDTO = gson.fromJson(request.getPayload(), InvitationDTO.class);
         String receiverName = inviteDTO.getReceiverUsername();
 
@@ -323,10 +321,6 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleMakeMove() {
-        // TODO: implement make move
->>>>>>> f2e78a4 (feat: enhance ClientHandler and ServerContext for cross-client messaging)
-    }
 
     private void handleWatch() {
         // TODO: implement watch
@@ -336,7 +330,6 @@ public class ClientHandler implements Runnable {
         ServerContext.joinMatchmakingQueue(this);
     }
 
-<<<<<<< HEAD
     private void handleLeaveGame(JsonElement payload) {
         if (payload == null || payload.isJsonNull()) {
             return;
@@ -367,19 +360,6 @@ public class ClientHandler implements Runnable {
         ServerContext.removeClient(username);
         loggedInUser = null;
         ServerContext.broadcastOnlinePlayers(username);
-=======
-    private void handleLogout() {
-        if (loggedInUser == null) {
-            return;
-        }
-
-        String username = loggedInUser.getUsername();
-
-        ServerContext.removeClient(username);
-        loggedInUser = null;
-        ServerContext.broadcastOnlinePlayers(username);
-
->>>>>>> f2e78a4 (feat: enhance ClientHandler and ServerContext for cross-client messaging)
     }
 
     private void handleUnknownRequest(RequestType request) {
