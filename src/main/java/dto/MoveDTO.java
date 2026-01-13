@@ -17,7 +17,7 @@ public class MoveDTO {
         this.col = col;
         this.symbol = symbol;
     }
-
+    
     public String getSessionId() {
         return sessionId;
     }
