@@ -1,4 +1,5 @@
 package com.mycompany.java.server.project;
+
 import dao.UserDAO;
 import com.google.gson.Gson;
 import data.Response;
@@ -35,10 +36,9 @@ public class ServerContext {
     public static ClientHandler getClientHandler(String username) {
         return onlineClients.get(username);
     }
-    
-    
+
     public static boolean isClientExist(String username) {
-       
+
         return onlineClients.containsKey(username);
     }
 
@@ -55,7 +55,7 @@ public class ServerContext {
         ))
                 .collect(Collectors.toList());
     }
-    
+
     public static List<UserDTO> getOnlineUsers() {
         return onlineClients.values().stream()
                 .map(ClientHandler::getLoggedInUser)
@@ -78,7 +78,8 @@ public class ServerContext {
             return 0;
         }
     }
-   public static void broadcastOnlinePlayers(String loggedoutUsername) {
+
+    public static void broadcastOnlinePlayers(String loggedoutUsername) {
         onlineClients.forEach((username, client) -> {
             if (!username.equals(loggedoutUsername)) {
                 List<UserDTO> listForClient
@@ -92,6 +93,7 @@ public class ServerContext {
             }
         });
     }
+
     public static void broadcastOnlinePlayers() {
         onlineClients.forEach((username, client) -> {
 
@@ -105,6 +107,22 @@ public class ServerContext {
 
             client.send(response);
         });
+    }
+
+    public static void startNewGame(ClientHandler client1, ClientHandler client2) {
+        Gson gson = new Gson();
+
+        client1.getLoggedInUser().setState(enums.UserState.IN_GAME);
+        client2.getLoggedInUser().setState(enums.UserState.IN_GAME);
+
+        broadcastOnlinePlayers();
+
+        GameSession session = createGameSession(client1, client2);
+        GameSessionDTO dto = GameSessionDTO.fromModel(session);
+        Response response = new Response(ResponseType.GAME_STARTED, gson.toJsonTree(dto));
+
+        client1.send(response);
+        client2.send(response);
     }
 
     public static boolean joinMatchmakingQueue(ClientHandler client) {
@@ -166,7 +184,7 @@ public class ServerContext {
             onlineClients.get(session.getPlayer2().getUsername()).getLoggedInUser().setState(UserState.ONLINE);
         }
     }
-    
+
     public static void resetPlayerState(String username) {
         if (onlineClients.containsKey(username)) {
             onlineClients.get(username).getLoggedInUser().setState(UserState.ONLINE);
