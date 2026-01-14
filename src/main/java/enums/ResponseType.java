@@ -21,7 +21,6 @@ public enum ResponseType {
     GAME_OVER,
     GAME_STARTED,
     GAME_UPDATE,
-    GAME_ENDED,
     REMATCH_REQUESTED,
     OPPONENT_LEFT,
     SERVER_SHUTDOWN
