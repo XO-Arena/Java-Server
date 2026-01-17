@@ -14,7 +14,7 @@ The server acts as the central coordinator (the "Brain") of the game. It manages
 **Key Responsibilities:**
 - **Matchmaking:** Connecting players via "Quick Match" or private invitations.
 - **State Validation:** Ensuring every move follows Tic-Tac-Toe rules before broadcasting.
-- **Real-time Streaming:** Updating spectators and players instantly as moves occur.
+- **Real-time Streaming:** Updating Online Players and Leader board and players instantly as moves occur.
 - **Concurrency:** Handling dozens of simultaneous games without performance drops.
 
 > **Note on Storage:** To keep the server lightweight and fast, game recordings (replays) are stored locally on the client-side. The server only manages "Live" data.
@@ -22,12 +22,11 @@ The server acts as the central coordinator (the "Brain") of the game. It manages
 ## ✨ Key Features
 ### 🔐 Authentication & Security
 - Secure User Registration and Login/Logout systems.
-- Player status tracking (Online, InGame,Watching, Offline).
+- Player status tracking (Online, InGame, Watching, Offline).
 
 ### 🔗 Multiplayer & Matchmaking
 - **Quick Match:** Automatically pairs waiting players for instant action.
 - **Invitation System:** Allows players to challenge specific friends from the online list.
-- **Spectator Mode:** Users can join "Live" rooms to watch ongoing matches in real-time.
 
 ### ⚡ Technical Performance
 - **Multithreaded Architecture:** Every client connection is handled in a separate thread to prevent blocking.
@@ -49,7 +48,7 @@ server/
 ├─ dto/ # Data Transfer Objects for JSON serialization
 ├─ enums/ # Constants (GameState, RequestType, PlayerStatus)
 ├─ utils/ # Database helpers and network utilities
-└─ ServerApp.java # The main entry point and port listener
+└─ App.java # The main entry point and port listener
 ```
 
 
@@ -78,4 +77,4 @@ Auth: Client sends a Login DTO; Server validates and returns a Success/Fail resp
 
 Match: Client requests a game; Server moves the player to a GameSession.
 
-Play: Player A moves → Server validates → Server broadcasts move to Player B and Spectators.
+Play: Player A moves → Server validates → Server send the move to Player B .
