@@ -1,0 +1,19 @@
+package enums;
+
+public enum RequestType {
+    LOGIN,
+    REGISTER,
+    GET_ONLINE_PLAYERS,
+    GET_LEADERBOARD,
+    INVITE,
+    ACCEPT,
+    REJECT,
+    CANCEL,
+    MAKE_MOVE,
+    WATCH,
+    QUICK_GAME,
+    LEAVE_QUEUE,
+    LEAVE_GAME,
+    LOGOUT,
+    REMATCH_REQUEST
+}
